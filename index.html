@@ -1046,6 +1046,8 @@ function joinRoom(config, roomId, cb = {}) {
       if (!p.active || !a || dropped()) return;
       let data;
       try { data = JSON.parse(m.json); } catch { return; }
+      try { if (a.onReceiveProgress) a.onReceiveProgress(1, { peerId: id }); } catch (e) { console.error(e); }   // one chunk, as Trystero for small messages
+      if (p.dead) return;                                                                                      // the progress hook may have closed it
       try { if (a.onMessage) a.onMessage(data, { peerId: id }); } catch (e) { console.error(e); }
     } else if (m.t === 'bye') drop(id, false);
   }
@@ -1254,10 +1256,10 @@ function validate(ev, ctx = {}) {
   if (typeof ev.sig !== 'string' || !HEX128.test(ev.sig)) return no('sig');
   if (!Number.isInteger(ev.created_at)) return no('created_at');
   if (!Array.isArray(ev.tags) || ev.tags.length < 1 || ev.tags.length > 4
-    || !ev.tags.every((t) => Array.isArray(t) && t.every((s) => typeof s === 'string' && s.length <= 128))) return no('tags');
+    || !ev.tags.every((t) => Array.isArray(t) && t.length <= 3 && t.every((s) => typeof s === 'string' && s.length <= 128))) return no('tags');
   if (typeof ev.content !== 'string' || ev.content.length > C.MAX_CONTENT) return no('content');
   const ds = ev.tags.filter((t) => t[0] === 'd');
-  if (ds.length !== 1) return no('d');
+  if (ds.length !== 1 || ds[0].length !== 2) return no('d');
   const m = typeof ds[0][1] === 'string' ? TAG_RE.exec(ds[0][1]) : null;
   const date = m && m[1];
   if (!date || !isDate(date) || date < T.FIRST_DAY || date > T.addDays(today, 1)) return no('date');
@@ -1300,7 +1302,9 @@ function pref(k, v) {
 }
 
 // ---- storage: IndexedDB, or an in-memory stand-in ----------------------------------------------------
-const req = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+// the request is made inside the executor: a closed connection throws from transaction(), and that must
+// reach the callers' .catch() as a rejection
+const req = (mk) => new Promise((res, rej) => { const r = mk(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
 function idbStore(name) {
   return new Promise((resolve, reject) => {
     const open = indexedDB.open(name, 1);
@@ -1314,13 +1318,19 @@ function idbStore(name) {
     open.onsuccess = () => {
       const db = open.result;
       const os = (s, mode) => db.transaction(s, mode).objectStore(s);
-      resolve({
+      const store = {
         kind: 'idb',
-        allOwn: () => req(os('own').getAll()),
-        putOwn: (v) => req(os('own', 'readwrite').put(v)),
-        sheetsOf: (d) => req(os('sheets').index('d').getAll(d)),
-        getSheet: (pk, d) => req(os('sheets').get([pk, d])),
-        putSheet: (v) => req(os('sheets', 'readwrite').put(v)),
+        onclose: null,
+        allOwn: () => req(() => os('own').getAll()),
+        // read-merge-write in one transaction: make(stored row | undefined) returns the row to put
+        putOwn: (pk, d, make) => new Promise((res, rej) => {
+          const s = os('own', 'readwrite'), g = s.get([pk, d]);
+          g.onerror = () => rej(g.error);
+          g.onsuccess = () => { try { const p = s.put(make(g.result)); p.onsuccess = () => res(); p.onerror = () => rej(p.error); } catch (e) { rej(e); } };
+        }),
+        sheetsOf: (d) => req(() => os('sheets').index('d').getAll(d)),
+        getSheet: (pk, d) => req(() => os('sheets').get([pk, d])),
+        putSheet: (v) => req(() => os('sheets', 'readwrite').put(v)),
         prune: (cut, keep) => new Promise((res, rej) => {
           const c = os('sheets', 'readwrite').index('d').openCursor(IDBKeyRange.upperBound(cut, true));
           c.onerror = () => rej(c.error);
@@ -1331,7 +1341,9 @@ function idbStore(name) {
             cur.continue();
           };
         }),
-      });
+      };
+      db.onclose = () => { if (store.onclose) store.onclose(); };   // the browser dropped the connection
+      resolve(store);
     };
   });
 }
@@ -1342,7 +1354,7 @@ function memStore() {
   return {
     kind: 'memory',
     allOwn: async () => [...own.values()].map(copy),
-    putOwn: async (v) => { own.set(k(v.pk, v.d), copy(v)); },
+    putOwn: async (pk, d, make) => { const cur = own.get(k(pk, d)); own.set(k(pk, d), copy(make(cur && copy(cur)))); },
     sheetsOf: async (d) => [...sheets.values()].filter((v) => v.d === d).map(copy),
     getSheet: async (pk, d) => (sheets.has(k(pk, d)) ? copy(sheets.get(k(pk, d))) : undefined),
     putSheet: async (v) => { sheets.set(k(v.pk, v.d), copy(v)); },
@@ -1391,6 +1403,10 @@ function realAdapter(nt, ty) {
       },
     },
     joinRoom: ty.joinRoom,
+    // Trystero's signaling sockets give up for good after ~1 min of failed retries; checkRelays holds
+    // their retries while no relay of ours is up either (an outage the browser didn't call 'offline')
+    pauseMesh: ty.pauseRelayReconnection,
+    resumeMesh: ty.resumeRelayReconnection,
   };
 }
 async function loadLibs() {
@@ -1404,7 +1420,7 @@ async function loadLibs() {
 }
 
 // ---- runtime state -----------------------------------------------------------------------------------
-let opts = null, booting = null, booted = false;
+let opts = null, booting = null, booted = false, libWait = false;
 let T = null;                    // transport adapter, null = local only
 let ready = null;                // Promise<T|null>
 let db = memStore();             // replaced in start()
@@ -1473,8 +1489,26 @@ function ownRec(date, create, pk = me) {
   return o || null;
 }
 const nextC = (o) => { let n = o.r; o.e.forEach((v) => { if (v.c > n) n = v.c; }); return n + 1; };
+const rowE = (row) => {
+  const e = new Map();
+  for (const x of (row && row.e) || []) if (Array.isArray(x) && isInt(x[0], 0, 999) && isInt(x[1], 1, MAXC)) e.set(x[0], { c: x[1], on: x[2] ? 1 : 0 });
+  return e;
+};
 function saveOwn(o) {
-  db.putOwn({ pk: o.pk, d: o.d, e: [...o.e].map(([i, v]) => [i, v.c, v.on]), r: o.r, last: o.last, acked: o.acked, dirty: o.dirty }).catch(() => {});
+  db.putOwn(o.pk, o.d, (row) => { mergeStored(o, row); return { pk: o.pk, d: o.d, e: [...o.e].map(([i, v]) => [i, v.c, v.on]), r: o.r, last: o.last, acked: o.acked, dirty: o.dirty }; }).catch(() => {});
+}
+// another tab of this identity may have stored marks this tab never saw: merge them in before writing
+function mergeStored(o, row) {
+  if (!row) return;
+  const m = mergeSheet({ r: o.r, e: o.e }, { r: isInt(row.r, 0, MAXC) ? row.r : 0, e: rowE(row) });
+  if (row.last && (!o.last || newer(row.last, o.last))) { o.last = row.last; o.acked = row.acked !== false; }
+  if (canonical({ h: '', r: m.r, e: m.e }) === canonical({ h: '', r: o.r, e: o.e })) return;
+  o.r = m.r;
+  o.e = m.e;
+  o.dirty = true;
+  if (o.pk === me) schedulePublish(o.d);
+  emitDay(o.d);
+  connChanged();
 }
 const ownContent = (o) => canonical({ h: text().page(o.d).hash, r: o.r, e: o.e });
 function countUnsent() {
@@ -1526,6 +1560,10 @@ async function ingestNow(ev, source) {
   // own events merge even when older than the newest held: another device's marks must not be lost
   const known = () => { const r = map.get(pk); return r && (r.ev.id === ev.id || newer(r.ev, ev)); };
   if (mine ? ownSeen.has(ev.id) || (map.get(pk) && map.get(pk).ev.id === ev.id) : known()) return 'known';
+  // first-seen cap, checked before the verify it saves; live mesh peers are exempt like me, so throwaway
+  // keys that filled a day can't lock out the players actually here
+  const full = () => !mine && !map.has(pk) && map.size >= C.STORE_PER_TAG && ![...bound.values()].includes(pk);
+  if (full()) return 'full';
   if (source !== 'idb' && source !== 'local') {
     let ok = false;
     try { ok = !!T && (await T.crypto.verify(ev)); } catch {}
@@ -1534,8 +1572,8 @@ async function ingestNow(ev, source) {
   const clean = cleanEv(ev);
   if (mine && sheet.hashOk && source !== 'local') { ownSeen.add(ev.id); ownMerge(date, sheet, clean); }
   if (known()) return mine ? null : 'known';
+  if (full()) return 'full';
   const prev = map.get(pk);
-  if (!prev && map.size >= C.STORE_PER_TAG && !mine) return 'full';
   const rec = { pk, d: date, ev: clean, seenAt: prev ? prev.seenAt : nowMs(), hashOk: sheet.hashOk, sheet };
   map.set(pk, rec);
   db.putSheet({ pk, d: date, ev: clean, seenAt: rec.seenAt, hashOk: rec.hashOk }).catch(() => {});
@@ -1548,6 +1586,10 @@ async function ingestNow(ev, source) {
 function maybeOwnMerge(rec) {
   if (rec.pk !== me || !rec.hashOk || ownSeen.has(rec.ev.id)) return;
   ownSeen.add(rec.ev.id);
+  // my own latest signed sheet, held locally: nothing to merge, and whether it reached a relay is the
+  // outbox's call (ownMerge would mark it acked)
+  const o = ownRec(rec.d);
+  if (o && o.last && o.last.id === rec.ev.id) return;
   ownMerge(rec.d, rec.sheet, rec.ev);
 }
 
@@ -1664,11 +1706,18 @@ async function flush(date, force) {
   connChanged();
 }
 function flushAll() {
-  const m = me && ownAll.get(me);
-  if (m) m.forEach((o, d) => { if (o.dirty) flush(d, true); });
+  const m = me && ownAll.get(me), all = [];
+  if (m) m.forEach((o, d) => { if (o.dirty) all.push(flush(d, true)); });
+  return Promise.all(all);
+}
+// pagehide and sign-out: the flushes broadcast to the mesh after signing, so leave only once they have
+// (and only the room of now); rejoin if the page came back or a new name signed in meanwhile
+function flushThenLeave() {
+  const r = room, p = flushAll().catch(() => {});
+  if (r) p.then(() => { if (room === r) { leaveMesh(); joinMesh(); } });
 }
 async function publishOwn(date, ev) {
-  const res = await publishTo(ev, writable());
+  const res = await publishTo(ev, writable(), true);
   if (!res.some((x) => x.ok)) return;
   const o = ownRec(date, false, ev.pubkey);
   if (o && o.last && o.last.id === ev.id && !o.acked) {
@@ -1696,7 +1745,9 @@ function writable() {
   const stored = pref('relays.ro') || {}, now = nowMs();
   return T.relays.urls.filter((u) => !roSession.has(u) && !(stored[u] > Date.now()) && now - (lastPub.get(u) || -Infinity) >= (interval.get(u) || 0));
 }
-async function publishTo(ev, urls) {
+// own: only a rejection of my own sheet says the relay won't take my writes. A forwarded sheet is
+// refused for its author or its timestamp, and `invalid:` refuses one event, so neither demotes a relay.
+async function publishTo(ev, urls, own) {
   if (!T || !urls.length) return [];
   const at = nowMs();
   urls.forEach((u) => lastPub.set(u, at));
@@ -1706,7 +1757,7 @@ async function publishTo(ev, urls) {
   return res.map(({ url, ok, reason }) => {
     const why = String(reason || '');
     if (/^rate-limited:/.test(why)) interval.set(url, Math.min(120000, Math.max(5000, (interval.get(url) || 0) * 2)));
-    else if (/^(blocked|pow|auth-required|restricted|invalid):/.test(why)) {
+    else if (own && /^(blocked|pow|auth-required|restricted):/.test(why)) {
       roSession.add(url);
       const stored = pref('relays.ro') || {};
       stored[url] = Date.now() + 7 * 86400000;
@@ -1736,6 +1787,7 @@ function resubscribe(force) {
   s = T.relays.subscribe({ kinds: [C.KIND], '#d': dates.map(dayTag), limit: 500 }, {
     onevent: (ev) => { ingest(ev, 'relay'); },
     oneose: async () => {
+      if (sub !== s) return;       // nostr-tools fires oneose on close too: a superseded sub read nothing
       await Promise.allSettled([...inflight]);
       dates.forEach((d) => eose.add(d));
       const m = me && ownAll.get(me);
@@ -1751,6 +1803,8 @@ function checkRelays() {
   const lost = [...upLast].some((u) => !up.has(u));
   upLast = up;
   if (lost || up.size === 0) resubscribe(true);
+  // Trystero pauses itself on 'offline' and resumes on 'online': resume only what it wouldn't hold anyway
+  try { if (up.size === 0) { if (T.pauseMesh) T.pauseMesh(); } else if (T.resumeMesh && !(globalThis.navigator && navigator.onLine === false)) T.resumeMesh(); } catch {}
 }
 
 let historyFor = null;
@@ -1787,6 +1841,8 @@ function forward(pk, d) {
   if (!rec || fwd.total >= 200) return;
   const t = today();
   if (d !== t && d !== text().addDays(t, -1)) return;
+  // only plain sheets that relays take (strfry refuses created_at past now + 15 min)
+  if (rec.ev.tags.length !== 1 || rec.ev.created_at > nowSec() + 900) return;
   const seen = T.relays.seenOn(rec.ev.id), now = nowMs();
   const recent = (u) => (fwd.perRelay.get(u) || []).filter((x) => now - x < 60000);
   const urls = writable().filter((u) => !seen.has(u) && recent(u).length < 20);
@@ -1799,17 +1855,19 @@ function forward(pk, d) {
 
 // ---- mesh (§5.5) ---------------------------------------------------------------------------------------
 let room = null, act = null, leaveTimer = null, hiddenAt = 0;
+let leaving = null;               // Promise of the last room's leave(); Trystero hands back a room still leaving
 const bound = new Map();          // peerId -> pk, in bind order
 const hsOk = new Map();           // peerId -> pk: our side of the handshake passed, waiting for onPeerJoin
 const presOf = new Map();         // peerId -> date they view
-const blocked = new Set();        // pks closed for budget violations, this session
 const budgets = new Map();        // peerId -> windows
 const outLog = new Map();         // peerId -> [{t, n, bytes}] of inv answers we sent (paced under their budget)
 
 function canJoin() { return !!(T && T.joinRoom && me && sk && visible()); }
 function joinMesh() {
+  if (!canJoin()) return;         // hidden: an 'online' must not cancel the pending 5 min leave
   clearTimeout(leaveTimer);
-  if (room || !canJoin()) return;
+  if (room) return;
+  if (leaving) { leaving.then(joinMesh); return; }
   try {
     room = T.joinRoom({ appId: C.APP_ID, password: C.ROOM_PASSWORD, relayConfig: { redundancy: 8, warnOnRelayFailure: false }, turnConfig: [] },
       C.ROOM, { onPeerHandshake: handshake, onJoinError: () => {} });
@@ -1823,6 +1881,9 @@ function joinMesh() {
     if (!spend(id, 'bytes', approxBytes(data))) return;
     fn(data, id);
   };
+  // Trystero buffers chunks until a message is whole, so the budget is also charged per chunk received
+  const chunk = (_, ctx) => { const id = peerOf(ctx); if (room === r && bound.has(id)) spend(id, 'chunks', 1); };
+  for (const a of Object.values(act)) a.onReceiveProgress = chunk;
   act.pres.onMessage = guard(onPres);
   act.inv.onMessage = guard((d, id) => { onInv(d, id); });
   act.ev.onMessage = guard(onEvs);
@@ -1830,7 +1891,7 @@ function joinMesh() {
     if (room !== r) return;
     const pk = hsOk.get(id);
     hsOk.delete(id);
-    if (!pk || blocked.has(pk)) { closePeer(id); return; }
+    if (!pk) { closePeer(id); return; }
     bind(id, pk);
     sendPres(id);
     sendInv(id);
@@ -1844,7 +1905,9 @@ function leaveMesh() {
   const r = room;
   room = null;
   act = null;
-  try { Promise.resolve(r.leave()).catch(() => {}); } catch {}
+  let p = null;
+  try { p = Promise.resolve(r.leave()).catch(() => {}); } catch {}
+  if (p) { leaving = p; p.then(() => { if (leaving === p) leaving = null; }); }
   hsOk.clear();
   [...bound.keys()].forEach(unbind);
   connChanged();
@@ -1857,7 +1920,8 @@ async function handshake(peerId, send, receive) {
   if (bound.size + hsOk.size >= C.MESH_CAP - 1) throw new Error('mesh full');
   const key = sk, r = room;
   if (!key || !T) throw new Error('nameless');
-  const hello = await T.crypto.finalize({ kind: C.HELLO_KIND, created_at: nowSec(), tags: [], content: T.selfId + '|' + C.ROOM }, key);
+  // addressed to this peer: a hello replayed to someone else under my peer id doesn't check out there
+  const hello = await T.crypto.finalize({ kind: C.HELLO_KIND, created_at: nowSec(), tags: [], content: T.selfId + '|' + peerId + '|' + C.ROOM }, key);
   await send(cleanEv(hello));
   const got = await receive();
   const h = got && typeof got === 'object' && 'data' in got && !('kind' in got) ? got.data : got;
@@ -1868,10 +1932,9 @@ async function handshake(peerId, send, receive) {
   later(() => { if (hsOk.get(peerId) === pk) hsOk.delete(peerId); }, 15000);   // never activated
 }
 async function checkHello(h, peerId) {
-  if (!plainObj(h) || h.kind !== C.HELLO_KIND || typeof h.content !== 'string' || h.content !== peerId + '|' + C.ROOM) return null;
+  if (!plainObj(h) || h.kind !== C.HELLO_KIND || typeof h.content !== 'string' || h.content !== peerId + '|' + T.selfId + '|' + C.ROOM) return null;
   if (typeof h.id !== 'string' || !HEX64.test(h.id) || typeof h.pubkey !== 'string' || !HEX64.test(h.pubkey) || typeof h.sig !== 'string' || !HEX128.test(h.sig)) return null;
   if (!Number.isInteger(h.created_at) || Math.abs(h.created_at - nowSec()) > 300 || !Array.isArray(h.tags)) return null;
-  if (blocked.has(h.pubkey)) return null;
   let ok = false;
   try { ok = await T.crypto.verify(h); } catch {}
   return ok ? h.pubkey : null;
@@ -1910,8 +1973,9 @@ function peers() {
   return [...out.values()];
 }
 
-// budgets per peer: 1 MB/min, ev ≤ 100 events/10 s, inv ≤ 3/min, pres ≤ 10/s; a violation closes and blocks
-const LIMITS = { bytes: [1048576, 60000], ev: [100, 10000], inv: [3, 60000], pres: [10, 1000] };
+// budgets per peer: 1 MB/min, 600 chunks/min (16 KB each; a pres is one), ev ≤ 100 events/10 s, inv ≤ 3/min,
+// pres ≤ 10/s; a violation closes that peer
+const LIMITS = { bytes: [1048576, 60000], chunks: [600, 60000], ev: [100, 10000], inv: [3, 60000], pres: [10, 1000] };
 const approxBytes = (data) => { try { return JSON.stringify(data).length; } catch { return 1048577; } };
 function spend(id, what, n) {
   const b = budgets.get(id);
@@ -1923,9 +1987,9 @@ function spend(id, what, n) {
   violate(id);
   return false;
 }
+// only the offending connection: peer ids are self-asserted, so blocking its pubkey would let a relayed
+// handshake get the real player refused
 function violate(id) {
-  const pk = bound.get(id);
-  if (pk) blocked.add(pk);
   closePeer(id);
   unbind(id);
 }
@@ -2039,8 +2103,7 @@ async function signIn(skHex) {
   return pk;
 }
 function signOut() {
-  flushAll();                 // signs what it can now; the rest stays dirty in storage for the next sign-in
-  leaveMesh();
+  flushThenLeave();           // signs what it can now; the rest stays dirty in storage for the next sign-in
   lsSet('sk', null);
   const was = me;
   sk = null;
@@ -2097,7 +2160,7 @@ function history() {
 }
 function conn() {
   const unsent = countUnsent();
-  if (!T) return { state: booting && !booted ? 'wait' : 'off', unsent };
+  if (!T) return { state: (booting && !booted) || libWait ? 'wait' : 'off', unsent };
   let up = 0;
   try { up = T.relays.connected().size; } catch {}
   if (up > 0 || bound.size > 0) return { state: 'on', unsent };
@@ -2184,9 +2247,13 @@ async function boot(o) {
     lsPrefix = opts.mock ? 'nwm' + opts.dev + '.' : 'nw.';
     startedAt = Date.now();
     ready = opts.mock ? Promise.resolve(NW.mock || null) : loadLibs();
+    const libsLate = sleep(4000).then(() => null);
     const clock = opts.mock || typeof fetch !== 'function' || typeof location === 'undefined' ? null : syncClock();
     const storeP = openStore(opts.mock ? 'noisewords-mock' + opts.dev : 'noisewords', opts.memory);
     db = await storeP;
+    // the browser can drop the connection mid-session (iOS after backgrounding, site data cleared):
+    // go on in memory, with the own records written there again
+    if (db.kind === 'idb') db.onclose = () => { db = memStore(); ownAll.forEach((m) => m.forEach(saveOwn)); };
     tagLoads.clear();             // a day() before start() loaded from the empty placeholder store; load again
     await clock;
     lastToday = today();
@@ -2196,19 +2263,16 @@ async function boot(o) {
     const rows = await db.allOwn().catch(() => []);
     for (const r of rows) {
       if (!r || !HEX64.test(r.pk || '') || !isDate(r.d)) continue;
-      const e = new Map();
-      for (const x of r.e || []) if (Array.isArray(x) && isInt(x[0], 0, 999) && isInt(x[1], 1, MAXC)) e.set(x[0], { c: x[1], on: x[2] ? 1 : 0 });
-      mineMap(r.pk).set(r.d, { pk: r.pk, d: r.d, e, r: r.r || 0, last: r.last || null, acked: r.acked !== false, dirty: !!r.dirty });
+      mineMap(r.pk).set(r.d, { pk: r.pk, d: r.d, e: rowE(r), r: r.r || 0, last: r.last || null, acked: r.acked !== false, dirty: !!r.dirty });
     }
     db.prune(text().addDays(lastToday, -C.KEEP_DAYS), new Set(ownAll.keys())).catch(() => {});
     await Promise.all([loadTag(lastToday), loadTag(viewed)]);
 
-    T = await ready;
-    const key = lsGet('sk');
-    if (key && HEX64.test(key)) {
-      const pk = await derivePublicKey(key);
-      if (pk) adopt(key, pk);     // without the libraries: nameless this session; the key stays for next time
-    }
+    // a stalled CDN must not hold the page: after a few seconds go on local-only, and take the libraries
+    // (and the stored name) when the import lands
+    T = await Promise.race([ready, libsLate]);
+    if (T) await restoreKey();
+    else { libWait = true; ready.then(lateLibs); }
     booted = true;
     resubscribe(true);
     timers.push(bg(setInterval(() => {
@@ -2219,7 +2283,7 @@ async function boot(o) {
     timers.push(bg(setInterval(retryOutbox, 60000)));
     timers.push(bg(setInterval(connChanged, 2000)));
     listen('online', () => { resubscribe(true); retryOutbox(); joinMesh(); connChanged(); });
-    listen('pagehide', () => { flushAll(); leaveMesh(); });
+    listen('pagehide', flushThenLeave);
     listen('pageshow', (e) => { if (e && e.persisted) { resubscribe(true); joinMesh(); } });
     if (typeof document !== 'undefined') listen('visibilitychange', onVisibility, document);
     if (opts.debug || opts.mock) globalThis.__nw = NW.net;
@@ -2228,6 +2292,17 @@ async function boot(o) {
     console.error('noisewords: start failed', e);
     booted = true;
   }
+}
+async function restoreKey() {
+  const key = lsGet('sk');
+  if (me || !key || !HEX64.test(key)) return;
+  const pk = await derivePublicKey(key);
+  if (pk && !me) adopt(key, pk);  // without the libraries: nameless this session; the key stays for next time
+}
+function lateLibs(t) {
+  libWait = false;
+  if (t && !T) { T = t; restoreKey().then(() => { resubscribe(true); connChanged(); }); }
+  connChanged();
 }
 async function syncClock() {
   try {
@@ -2519,11 +2594,16 @@ const arrived = new Set(), eyeBeat = new Set(), greetedPeers = new Set();
 let lastPeerOllu = 0, lastStack = new Set(), stackInit = false;
 const PROBE_SK = '0000000000000000000000000000000000000000000000000000000000000001';   // tells whether crypto loaded
 
-// localStorage, prefixed like net.js (nw. or nwm<dev>. in mock mode); every access wrapped
+// localStorage, prefixed like net.js (nw. or nwm<dev>. in mock mode); every access wrapped, and a Map stands in
+// for a write that throws (site data blocked, storage full), so teelu and the first-run steps still stick this session
+const lsMem = new Map();
 const store = {
-  get(k) { try { return JSON.parse(localStorage.getItem(LS + k)); } catch { return null; } },
-  set(k, v) { try { if (v == null) localStorage.removeItem(LS + k); else localStorage.setItem(LS + k, JSON.stringify(v)); } catch {} },
-  has(k) { try { return localStorage.getItem(LS + k) != null; } catch { return false; } },
+  get(k) { if (lsMem.has(LS + k)) return lsMem.get(LS + k); try { return JSON.parse(localStorage.getItem(LS + k)); } catch { return null; } },
+  set(k, v) {
+    try { if (v == null) localStorage.removeItem(LS + k); else localStorage.setItem(LS + k, JSON.stringify(v)); lsMem.delete(LS + k); }
+    catch { lsMem.set(LS + k, v == null ? null : v); }
+  },
+  has(k) { if (lsMem.has(LS + k)) return lsMem.get(LS + k) != null; try { return localStorage.getItem(LS + k) != null; } catch { return false; } },
 };
 const setTaught = (n) => { if (n > taughtV) { taughtV = n; store.set('taught', n); } };
 const teeluDates = () => { const a = store.get('teelu'); return Array.isArray(a) ? a : []; };
@@ -2620,6 +2700,8 @@ function patchRibbon(rb, want, live) {
         b.classList.add('grow');
         const d = bloom && bloom.delays.get(c);
         if (d) b.style.setProperty('--d', d + 'ms');
+        // grown once: a later reorder (insertBefore) would otherwise restart the animation from scaleX(0)
+        b.addEventListener('animationend', () => { b.classList.remove('grow'); b.style.removeProperty('--d'); }, { once: true });
       }
     }
     keep.push(b);
@@ -2706,8 +2788,10 @@ function weekdayDots(date) {
   return h('span', { class: 'wd', 'aria-hidden': 'true' }, DAYS.map((_, k) => h('i', { class: (k >= 5 ? 'we' : '') + (k === wd ? ' on' : '') })));
 }
 function renderBar() {
+  if (rolled && S.date >= rolled) rolled = null;   // the new page has been visited: › rests
   const prevOk = S.date > FIRST_DAY(), nextOk = S.date < today;
-  const roll = rolled && nextOk;
+  // not while hidden: the beat's start is recorded on the first render someone can see
+  const roll = rolled && nextOk && document.visibilityState !== 'hidden';
   morph($('daynav'), [
     h('button', {
       type: 'button', class: 'round mirror' + (prevOk ? '' : ' inert'), 'data-k': 'prev',
@@ -2726,7 +2810,8 @@ function renderBar() {
   // the stack: live peers on this page at full strength, then other authors faded, then a numeral
   const ppl = people(dv, ready ? safe(() => NW.net.peers(), []) : [], S.date, me);
   const extra = Math.max(0, nAuthors(dv) - dv.others.length);
-  const shown = ppl.slice(0, 5), rest = ppl.length - shown.length + extra;
+  // under 360 px the bar cannot shrink, so three beads and the numeral take the rest
+  const shown = ppl.slice(0, window.innerWidth < 360 ? 3 : 5), rest = ppl.length - shown.length + extra;
   const stack = $('stack');
   stack.hidden = !ppl.length && !extra;
   const now = new Set();
@@ -2809,11 +2894,13 @@ function dockNodes() {
   }
   return kids;
 }
+// the stored identity is still loading: before start(), or while net goes on local-only for late libraries
+const meLoading = () => hadSk && !me && (!ready || safe(() => NW.net.conn().state, '') === 'wait');
 function renderDock() {
   const dock = $('dock');
   const a = document.activeElement;
   const focusK = a && dock.contains(a) ? a.getAttribute('data-k') : null;
-  if (!ready && hadSk && !me) morph(dock, [h('span', { class: 'wait', 'data-k': 'wait', role: 'img', 'aria-label': 'loading' }, icon('dots'))]);
+  if (meLoading()) morph(dock, [h('span', { class: 'wait', 'data-k': 'wait', role: 'img', 'aria-label': 'loading' }, icon('dots'))]);
   else if (!me || S.gate.open) morph(dock, gateNodes());
   else morph(dock, dockNodes());
   // focus: morph keeps a surviving control focused; if it went away (the eye after a reveal), land somewhere sensible
@@ -2881,7 +2968,12 @@ async function commit(e) {
     }
     const pvEl = $('dock').querySelector('.pv');
     const from = pvEl ? pvEl.getBoundingClientRect() : null;
+    // a reveal made while nameless (the E key) lives only in this browser; the signed-in sheet takes it over,
+    // so the page stays open and what is marked after looking is not blind. (Blind marks for this day on another
+    // device that have not merged yet lose their blindness to it.)
+    const carry = !me && dv.revealed ? S.date : null;
     await NW.net.signIn(pv.sk);
+    if (carry && !safe(() => NW.net.revealed(carry), true)) safe(() => NW.net.reveal(carry));
     input.value = '';
     input.blur();
     S.gate = { open: false, seq: S.gate.seq + 1, preview: null, busy: false, empty: true };
@@ -2945,7 +3037,7 @@ function tap(i) {
   const t = P.page.tokens[i];
   if (!t || !t.mk) return;
   if (!me) {
-    if (!ready && hadSk) return;   // the stored identity is still loading
+    if (meLoading()) return;   // the stored identity is still loading
     S.pending = i;
     render();
     focusName();
@@ -2959,7 +3051,7 @@ function tap(i) {
   if (S.kbd) announce(wordText(t, P.page.count, dv));
 }
 function reveal() {
-  if (!P || dv.revealed) return;
+  if (!P || dv.revealed || meLoading()) return;   // a nameless reveal now would be lost when the stored name loads
   const date = S.date;
   const page = $('page');
   const hadFocus = $('dock').contains(document.activeElement);
@@ -3080,6 +3172,7 @@ const SAMPLE = [
   '7c1e4a9b2d5f8c3e6a1b4d7f0c2e5a8b3d6f9c1e4a7b0d3f6c9e2a5b8d1f4c7e',
   'b24f8e1a6c3d9f5b2e8a4c7d1f6b3e9a5c2d8f4b1e7a3c6d9f2b5e8a1c4d7f0b',
   '3e9a5c2d8f4b1e7a3c6d9f2b5e8a1c4d7f0b3e6a9c2d5f8b1e4a7c0d3f6b9e2a',
+  '81bf07b70698f5647ccdee1ddea4407679c92acf0e93bf089bed9bfacc5dda3f',   // the third ribbon when "you" is SAMPLE[0]
 ];
 let legendOpener = null, legendPinned = false;
 function buildLegend() {
@@ -3087,7 +3180,7 @@ function buildLegend() {
   const row = (...kids) => h('div', { class: 'lg-row' }, kids);
   const panel = (sentence, ...rows) => h('div', { class: 'lg-panel' }, h('p', { class: 'sr-only', text: sentence }), rows);
   const you = me || SAMPLE[0], a = SAMPLE[1], b = SAMPLE[2];
-  const youC = pcls(you), aC = pcls(a), bC = pcls(b), cC = pcls(SAMPLE[0] === you ? SAMPLE[2] : SAMPLE[0]);
+  const youC = pcls(you), aC = pcls(a), bC = pcls(b), cC = pcls(you === SAMPLE[0] ? SAMPLE[3] : SAMPLE[0]);
   const toks = NW.text.page(today).tokens.filter((t) => t.k === 'c' && t.t.length <= 7);
   const words = [...new Set(toks.map((t) => t.t))];
   const W = (k) => words[k % Math.max(1, words.length)] || 'lune';
@@ -3289,7 +3382,12 @@ function wire() {
   });
   page.addEventListener('blur', () => { S.kbd = false; patchPage(); });
 
-  $('stack').addEventListener('click', () => { S.popover = !S.popover; render(); });
+  // the popover sits after the dock in the DOM, so focus moves into it (Esc brings it back to the stack)
+  $('stack').addEventListener('click', () => {
+    S.popover = !S.popover;
+    render();
+    if (S.popover) { const r = $('popover').querySelector('.prow'); if (r) r.focus({ preventScroll: true }); }
+  });
   // a press outside the popover closes it; on click, so the press that closes it still lands where it was aimed
   document.addEventListener('click', (e) => {
     if (!S.popover) return;
@@ -3305,6 +3403,7 @@ function wire() {
     if (e.key === 'Escape') return onEsc();
     // the pinned legend is modal: it covers the controls, so Tab stays on it
     if (e.key === 'Tab' && legendPinned && !$('legend').hidden) { e.preventDefault(); $('legend').focus(); return; }
+    if (legendPinned && !$('legend').hidden) return;   // and nothing reaches the page behind it (E, Alt+←/→)
     if (typing(e.target)) return;
     if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); step(e.key === 'ArrowLeft' ? -1 : 1); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -3326,7 +3425,9 @@ function wire() {
     vv.addEventListener('resize', follow);
     vv.addEventListener('scroll', follow);
   }
-  window.addEventListener('resize', () => { queueSky(); if (S.popover) renderPopover(); });
+  window.addEventListener('resize', () => { queueSky(); queueRender(); });   // the stack's bead cap, the popover's place
+  // a background tab renders on the timer; once it is seen again, render so a pending › beat starts now
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'hidden') queueRender(); });
   if (window.ResizeObserver) new ResizeObserver(queueSky).observe($('sheet'));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueSky);
 }
@@ -3455,6 +3556,9 @@ function buildStatic() {
   $('legend-btn').replaceChildren(icon('question'));
   $('retry').replaceChildren(icon('retry'));
 }
+// a returning player on a new browser skips the first run; their history is only known after sign-in, once the
+// relays have answered ('history'), so the check repeats then
+const returning = () => { if (taughtV === 0 && safe(() => NW.net.history().size, 0) > 0) setTaught(1); };
 function listen() {
   const on = (type, fn) => { try { NW.net.on(type, fn); } catch {} };
   on('day', (e) => { if (!e || e.date === S.date) queueRender(); });
@@ -3464,8 +3568,8 @@ function listen() {
   });
   on('conn', queueRender);
   on('ack', () => flash($('save')));
-  on('history', () => { queueSky(); queueRender(); });
-  on('identity', () => { S.spot = null; queueRender(); queueSky(); });
+  on('history', () => { returning(); queueSky(); queueRender(); });
+  on('identity', () => { S.spot = null; returning(); queueRender(); queueSky(); });
   // a new day began while this page is open: the page stays, › beats
   on('today', (e) => { rolled = (e && e.date) || getToday(); queueRender(); queueSky(); });
 }
@@ -3498,8 +3602,9 @@ async function boot() {
   if (d !== S.date) { S.date = d; buildPage(d, 'swap'); }
   if (P) P.fresh = true;   // what the local replica already holds appears with the page, without growing
   safe(() => NW.net.view(S.date));
+  render();   // the replica now: start() doesn't wait on late libraries, but the probe below does
   try { libsMissing = (await NW.net.derivePublicKey(PROBE_SK)) == null; } catch { libsMissing = true; }
-  if (taughtV === 0 && safe(() => NW.net.history().size, 0) > 0) setTaught(1);   // a returning player on a new browser
+  returning();
   render();
   queueSky();
   if (S.gate.preview == null && !S.gate.empty) { const i = $('name'); if (i) onName({ target: i }); }   // typed before crypto loaded
