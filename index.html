@@ -250,12 +250,13 @@ button { font: inherit; color: inherit; }
   font-size: 18px; font-weight: var(--wt-body); line-height: 2.05;
   text-wrap: pretty; overflow-wrap: anywhere;
   color: var(--ink);
-  touch-action: manipulation;
+  touch-action: pan-y pinch-zoom;   /* vertical scroll and pinch stay native; a horizontal start is a stroke (§7.5) */
   user-select: none; -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-drag: none;
 }
+.page.zoomed { touch-action: manipulation; }   /* pinch-zoomed in: one finger pans the view every way, no strokes */
 .page p { margin: 0 0 0.5em; }
 .page p:last-child { margin-bottom: 0; }
 .page.swap { animation: fade-in var(--t-whisper) var(--ease-soft); }
@@ -299,8 +300,11 @@ button { font: inherit; color: inherit; }
 .w.mine { color: var(--dusk-deep); }
 .w.mine .f { opacity: 1; }
 .w.ghost .f { opacity: 0.3; }
-.w.unmark .f { opacity: 0.35; }
-.w.unmark::after { outline: 1.5px dashed var(--ink-dim); outline-offset: 1px; }
+.w.unmark .f, .w.mine.sweep .f { opacity: 0.35; }
+.w.unmark::after, .w.mine.sweep::after { outline: 1.5px dashed var(--ink-dim); outline-offset: 1px; }
+/* a stroke in progress: what it would mark at .5, and the words past the ink as a dotted outline (an erase stroke looks like .unmark) */
+.w.sweep:not(.mine) .f { opacity: 0.5; }
+.w.over::after { outline: 1.5px dotted var(--ink-faint); }
 .w.pending::after { outline: 1.5px dashed var(--rose); }
 .w.kb::after { outline: 1.5px dashed var(--rose); outline-offset: 2px; }
 .w.butter { color: var(--butter); text-shadow: 0 0 10px color-mix(in oklab, var(--butter) 45%, transparent); }
@@ -344,6 +348,7 @@ button { font: inherit; color: inherit; }
 .rail { display: flex; align-items: center; gap: 5px; padding: 0 2px; }
 .rail i { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); }
 .rail i.spent { background: var(--pat) 0 0 / 6px 6px; box-shadow: 0 0 0 1px var(--dusk-1); }
+.rail i.pend { background: var(--pat) 0 0 / 6px 6px; opacity: 0.5; }
 .rail.wob { animation: wob 300ms linear; }
 @keyframes wob { 0%, 33.3%, 66.6%, 100% { transform: none; } 8.3%, 41.6%, 75% { transform: translateX(3px); } 25%, 58.3%, 91.6% { transform: translateX(-3px); } }
 .eye .num:empty { display: none; }
@@ -436,6 +441,7 @@ button { font: inherit; color: inherit; }
 .lg-line { width: 40px; height: 16px; border-bottom: 1px solid var(--line); }
 .lg-btn { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--r-pill); border: 1px solid color-mix(in oklab, var(--rose) 55%, transparent); background: color-mix(in oklab, var(--rose) 20%, var(--dusk-1)); color: var(--ink); }
 .lg-btn .icon { width: 14px; height: 14px; }
+.lg-undo { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--ink); }
 .lg-row .me-btn { width: 32px; height: 32px; position: relative; display: grid; place-items: center; }
 .lg-text .w { cursor: default; }
 .lg-row .save { opacity: 1; }
@@ -459,6 +465,7 @@ button { font: inherit; color: inherit; }
   .me-btn { width: 44px; height: 44px; }
   .round::after { content: ''; position: absolute; inset: -8px; }
   .dock .round::after { inset: -4px; }
+  .dock .round.undo::after { inset: -8px; }   /* the ↺ keeps the full 44 px; it ends at the eye's edge */
 }
 @media (max-width: 400px) { .dock, .gate { gap: 8px; } }
 
@@ -501,7 +508,7 @@ button { font: inherit; color: inherit; }
       aria-label="Today's page of noise words. Arrow keys move between words, Enter marks or unmarks one. You can mark 7 words a day. Other players' marks stay hidden until you reveal them with the eye button."></div>
   </main>
 
-  <nav class="dock" id="dock" aria-label="Your name, marks left and reveal"></nav>
+  <nav class="dock" id="dock" aria-label="Your name, marks left, undo and reveal"></nav>
   <div class="popover" id="popover" role="dialog" aria-label="Players on this page" hidden></div>
   <div class="legend-scrim" id="legend-scrim" hidden></div>
   <div class="legend" id="legend" role="dialog" aria-label="How to play" tabindex="-1" hidden></div>
@@ -2473,7 +2480,56 @@ function wordText(tok, count, dv) {
   return `${tok.t}, word ${tok.i + 1} of ${count}, ${state}`;
 }
 
-NW.app = Object.freeze({ dateNumerals, dateWords, nAuthors, ribbonsOf, teeluHits, meetings, people, nearestWord, lineStep, statusText, wordText, boot });
+// ---- strokes and undo (§7.5) ----
+/** The markable indices from min(a,b) to max(a,b), in reading order (function words skipped). */
+function rangeOf(markable, a, b) {
+  const out = [];
+  if (!Number.isInteger(a) || !Number.isInteger(b)) return out;
+  const lo = Math.max(0, Math.min(a, b)), hi = Math.min(markable.length - 1, Math.max(a, b));
+  for (let i = lo; i <= hi; i++) if (markable[i]) out.push(i);
+  return out;
+}
+/** What a stroke from a to b over `range` would do: { apply, over }, both ordered from a toward b.
+ *  mark: the range words not already mine; the first `left` apply, the rest are over. erase: my words in the range. */
+function strokePlan(range, mine, left, mode, a, b) {
+  const ord = b < a ? [...range].reverse() : [...range];
+  if (mode === 'erase') return { apply: ord.filter((i) => mine.has(i)), over: [] };
+  const cand = ord.filter((i) => !mine.has(i));
+  const n = Math.max(0, Math.min(cand.length, left | 0));
+  return { apply: cand.slice(0, n), over: cand.slice(n) };
+}
+/** Undoing a group [[idx, prevOn, setOn], ...]: walk it in reverse, and restore only the words still as the group left
+ *  them (another device or a later edit may have changed the rest). → [[idx, on], ...] to apply, in that order. */
+function undoPlan(group, mine) {
+  const out = [];
+  for (let k = group.length - 1; k >= 0; k--) {
+    const [i, prevOn, setOn] = group[k];
+    if (mine.has(i) === !!setOn) out.push([i, !!prevOn]);
+  }
+  return out;
+}
+/** The part of an undo plan the ink allows, in the order undo() applies it: an unmark gives ink back, a re-mark spends
+ *  it. undo() still tries the rest (and wobbles); the ↺ preview shows only this. */
+function undoFit(plan, ink) {
+  return plan.filter(([, on]) => (on ? ink-- > 0 : (ink++, true)));
+}
+/** What a pointermove does to a pending press: 'drop' once no button is held (its release went elsewhere), 'begin' past
+ *  the threshold (mouse 6 px any way; touch and pen 10 px within 30° of horizontal), else null. */
+function pressMove(type, dx, dy, buttons) {
+  if (!(buttons & 1)) return 'drop';
+  dx = Math.abs(dx); dy = Math.abs(dy);
+  return (type === 'mouse' ? Math.hypot(dx, dy) >= 6 : dx >= 10 && dy <= 0.577 * dx) ? 'begin' : null;
+}
+/** Auto-scroll while stroking, px a frame (− is up): 4–16 by depth within Z px under the bar's bottom or above the dock's
+ *  top, but only once the stroke has travelled toward that edge (half a line) from where it was pressed (y0), so a
+ *  sideways stroke along the line next to the dock or bar stays put. */
+function scrollSpeed(y, y0, top, bottom, Z = 48) {
+  if (y < top + Z && y0 - y > 18) return -(4 + 12 * Math.min(1, (top + Z - y) / Z));
+  if (y > bottom - Z && y - y0 > 18) return 4 + 12 * Math.min(1, (y - (bottom - Z)) / Z);
+  return 0;
+}
+
+NW.app = Object.freeze({ dateNumerals, dateWords, nAuthors, ribbonsOf, teeluHits, meetings, people, nearestWord, lineStep, statusText, wordText, rangeOf, strokePlan, undoPlan, undoFit, pressMove, scrollSpeed, boot });
 
 // Everything below needs a document; under node the module stops here.
 if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -2505,6 +2561,7 @@ const ICONS = {
   eye: `<path d="M3.5 12c2-3.6 5-5.5 8.5-5.5s6.5 1.9 8.5 5.5c-2 3.6-5 5.5-8.5 5.5S5.5 15.6 3.5 12z" ${ST}/><circle cx="12" cy="12" r="2.4" ${FILL}/>`,
   leave: `<path d="M13.5 5h-5A2.5 2.5 0 0 0 6 7.5v9A2.5 2.5 0 0 0 8.5 19h5" ${ST}/><path d="M11 12h8.5M16.5 9l3 3-3 3" ${ST}/>`,
   retry: `<path d="M16.5 9.5A6 6 0 1 0 17.5 14" ${ST}/><path d="M16.5 5.5v4h-4" ${ST}/>`,
+  undo: `<path d="M7.5 9.5A6 6 0 1 1 6.5 14" ${ST}/><path d="M7.5 5.5v4h4" ${ST}/>`,
 };
 function icon(name, cls) {
   const s = svgEl('svg', { viewBox: '0 0 24 24', class: 'icon' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true', focusable: 'false' });
@@ -2560,6 +2617,7 @@ function morph(parent, kids) {
     if (o && !used.has(o) && sameKind(o, n)) { used.add(o); if (!k) cursor++; morphNode(o, n); return o; }
     return n;
   });
+  for (const o of old) if (!used.has(o)) o.remove();   // first, so moving a kept node never detaches it (and blurs focus)
   result.forEach((n, i) => { if (parent.childNodes[i] !== n) parent.insertBefore(n, parent.childNodes[i] || null); });
   while (parent.childNodes.length > result.length) parent.lastChild.remove();
 }
@@ -2582,6 +2640,8 @@ const S = {
   gate: { open: false, seq: 0, preview: null, busy: false, empty: true },
   popover: false,
   legend: false,
+  stroke: null,       // { date, mode: 'mark'|'erase', a, b, over } while a swipe is in progress (§7.5)
+  preview: null,      // 'undo' while the ↺ is hovered or focused
 };
 let ready = false, readyResolve = null;
 const readyP = new Promise((r) => { readyResolve = r; });
@@ -2656,7 +2716,7 @@ function buildPage(date, how) {
   root.classList.remove('arrive', 'swap');
   if (how) { void root.offsetWidth; root.classList.add(how); }
   P = {
-    date, page: pg, els, hint, fresh: true, meet: null,
+    date, page: pg, els, hint, fresh: true, meet: null, mk: els.map((e) => !!e),
     st: els.map((e) => e && { cls: 'w', fpat: '', rb: [], butter: false, mine: false, fx: new Set(), t: {} }),
   };
 }
@@ -2680,7 +2740,7 @@ function fx(i, name, ms) {
 const sparkWord = (date, i) => { if (P && P.date === date) fx(i, 'spark', 650); };
 
 function hintIdx() {
-  if (taughtV > 0 || S.spot || S.pending != null || (dv.mine && dv.mine.marks.size)) return -1;
+  if (taughtV > 0 || S.spot || S.stroke || S.pending != null || (dv.mine && dv.mine.marks.size)) return -1;
   return P ? P.hint : -1;
 }
 
@@ -2730,19 +2790,27 @@ function patchPage() {
   const kbOn = S.kbd && document.activeElement === root;
   const live = !P.fresh;
   if (syncBloom && Date.now() > syncBloom.until) syncBloom = null;
+  // a stroke in progress previews what it would apply (.sweep) and what is past the ink (.over);
+  // a hovered or focused ↺ previews its undo: words it would unmark (.unmark) and re-mark (.ghost)
+  const sp = strokePreview();
+  const sweep = new Set(sp ? sp.apply : EMPTY_LIST), over = new Set(sp ? sp.over : EMPTY_LIST);
+  const up = S.preview === 'undo' && !S.stroke ? new Map(undoPreview()) : EMPTY_MAP;
   P.els.forEach((el, i) => {
     if (!el) return;
     const st = P.st[i];
     const mine = marks.has(i);
-    const lit = !!spot && spot.marks.has(i);
+    const lit = !!spot && spot.marks.has(i) && !sweep.has(i);   // a stroke word shows the stroke
     const hov = S.hover === i && !!me && !spot;
-    const ghost = hov && !mine && left > 0;
-    const unmark = hov && mine;
+    const ghost = (hov && !mine && left > 0) || (up.get(i) === true && !mine);
+    const unmark = (hov && mine) || (up.get(i) === false && mine);
+    const sw = sweep.has(i), ov = over.has(i);
     const butter = rev && dv.butter.has(i);
     let cls = 'w';
     if (mine) cls += ' mine';
     if (ghost) cls += ' ghost';
     if (unmark) cls += ' unmark';
+    if (sw) cls += ' sweep';
+    if (ov) cls += ' over';
     if (S.pending === i) cls += ' pending';
     if (kbOn && S.kb === i) cls += ' kb';
     if (butter) cls += ' butter';
@@ -2752,7 +2820,7 @@ function patchPage() {
 
     // the fill keeps its last pattern while it fades out, so an unmark fades instead of blinking
     const f = el.firstElementChild;
-    const pat = lit ? spotCls : mine || ghost || unmark ? myCls : '';
+    const pat = lit ? spotCls : mine || ghost || unmark || sw ? myCls : '';
     if (pat && pat !== st.fpat) { st.fpat = pat; f.className = 'f ' + pat; }
     if (mine && !st.mine && live && syncBloom) {
       f.style.transitionDelay = (syncBloom.k++ * 15) + 'ms';
@@ -2875,12 +2943,22 @@ function gateNodes() {
 }
 function dockNodes() {
   const myCls = pcls(me), u = used(), left = inkLeft();
+  // a mark stroke in progress shows the dots it would spend
+  const sp = strokePreview();
+  const pend = sp && sp.mode === 'mark' ? sp.apply.length : 0;
   const kids = [
     h('button', { type: 'button', class: 'round me-btn', 'data-k': 'me', 'aria-label': 'Your colour pattern. Change name or sign out.', onclick: openGate },
       bead(me, 30), h('span', { class: 'badge' }, icon('me'))),
     h('span', { class: 'rail', 'data-k': 'rail', role: 'img', 'aria-label': `${u} of ${K} marks used` },
-      Array.from({ length: K }, (_, k) => h('i', { class: k < u ? 'spent ' + myCls : null }))),
+      Array.from({ length: K }, (_, k) => h('i', { class: k < u ? 'spent ' + myCls : k < u + pend ? 'pend ' + myCls : null }))),
   ];
+  if (undoTop()) {
+    kids.push(h('button', {
+      type: 'button', class: 'round undo', 'data-k': 'undo', 'aria-label': 'Undo the last change', onclick: undo,
+      onpointerenter: () => undoHover('hover', true), onpointerleave: () => undoHover('hover', false),
+      onfocus: (e) => undoHover('focus', true, e.currentTarget), onblur: () => undoHover('focus', false),
+    }, icon('undo')));
+  } else undoHov.hover = undoHov.focus = false;   // a removed button sends no pointerleave or blur
   if (!dv.revealed) {
     const n = nAuthors(dv);
     const primary = u >= 3 || left === 0;
@@ -2992,7 +3070,7 @@ async function commit(e) {
     if (S.pending != null) {
       const i = S.pending;
       S.pending = null;
-      if (!(dv.mine && dv.mine.marks.has(i))) markWord(i, true);
+      if (!(dv.mine && dv.mine.marks.has(i)) && markWord(i, true)) pushUndo(S.date, [[i, false, true]]);
     }
     announce('You are in. Your colour pattern is set.');
   } catch {
@@ -3044,12 +3122,137 @@ function tap(i) {
     return;
   }
   const mine = !!(dv.mine && dv.mine.marks.has(i));
-  if (mine) markWord(i, false);
-  else if (inkLeft() > 0) markWord(i, true);
+  if (mine) { if (markWord(i, false)) pushUndo(S.date, [[i, true, false]]); }
+  else if (inkLeft() > 0) { if (markWord(i, true)) pushUndo(S.date, [[i, false, true]]); }
   else wobble();   // no ink: the rail wobbles, nothing else
   render();
   if (S.kbd) announce(wordText(t, P.page.count, dv));
 }
+
+// ---- undo (§7.5): session-local, per date, at most 50 groups; a group is [[idx, prevOn, setOn], ...] in apply order ----
+const undoS = new Map();
+let undoOwner = null;
+const undoHov = { hover: false, focus: false };
+/** The date's stack; it belongs to one identity, so any identity change (sign-in, sign-out, a new name) empties it. */
+function undoStack(date, make) {
+  if (undoOwner !== me) { undoS.clear(); undoOwner = me; }
+  let a = undoS.get(date);
+  if (!a && make) undoS.set(date, (a = []));
+  return a || null;
+}
+function pushUndo(date, group) {
+  if (!me || !group.length) return;
+  const a = undoStack(date, true);
+  a.push(group);
+  if (a.length > 50) a.splice(0, a.length - 50);
+}
+const undoTop = () => { const a = me && S.date ? undoStack(S.date) : null; return a && a.length ? a[a.length - 1] : null; };
+const mineSet = () => new Set(dv.mine ? dv.mine.marks.keys() : EMPTY_LIST);
+/** [[idx, on], ...] the next undo would apply now. */
+const undoPreview = () => { const g = undoTop(); return g ? undoFit(undoPlan(g, mineSet()), inkLeft()) : EMPTY_LIST; };
+// keyboard focus previews too (:focus-visible), but not the focus a click leaves behind, or the preview would linger
+// over the next taps
+function undoHover(k, on, el) {
+  undoHov[k] = on && (k !== 'focus' || !el || el.matches(':focus-visible'));
+  const want = undoHov.hover || undoHov.focus ? 'undo' : null;
+  if (want === S.preview) return;
+  S.preview = want;
+  patchPage();
+}
+function undo() {
+  if (!me || !P || S.stroke) return;
+  const a = undoStack(S.date);
+  if (!a || !a.length) return;
+  const g = a.pop();
+  for (const [i, on] of undoPlan(g, mineSet())) markWord(i, on);   // a refused re-mark (ink spent elsewhere) wobbles and is skipped
+  announce('Undone.');
+  render();
+}
+
+// ---- strokes (§7.5): a swipe across words is a faster way to make several taps ----
+let gest = null;          // { id, type, x0, y0, start, x, y } from pointerdown until the stroke begins or the pointer goes
+let swallowAt = 0;        // the click that follows a stroke's release is not a tap (armed on that pointerup)
+let deadId = null;        // a cancelled stroke's pointer, still down: its later release arms swallowAt
+const strokeOk = () => !!me && !meLoading() && !S.gate.open && !(legendPinned && !$('legend').hidden) && !!P;
+/** The word under a point: the .w there, else the nearest on the same line within 12 px, else -1. */
+function wordAt(x, y) {
+  const el = document.elementFromPoint(x, y);
+  const w = el && el.closest ? el.closest('.w') : null;
+  if (w && $('page').contains(w)) return +w.getAttribute('data-i');
+  return nearestWord(wordRects(), x, y, 12);
+}
+/** The live stroke's plan against the current sheet, or null. */
+function strokePreview() {
+  const st = S.stroke;
+  if (!st || !P || st.date !== S.date || P.date !== st.date || !me) return null;
+  const p = strokePlan(rangeOf(P.mk, st.a, st.b), mineSet(), inkLeft(), st.mode, st.a, st.b);
+  p.mode = st.mode;
+  return p;
+}
+function paintStroke() { patchPage(); renderDock(); }
+function beginStroke(e) {
+  const g = gest;
+  gest = null;
+  if (!strokeOk() || g.start < 0) return;
+  try { $('page').setPointerCapture(g.id); } catch {}
+  const mode = dv.mine && dv.mine.marks.has(g.start) ? 'erase' : 'mark';
+  S.stroke = { date: S.date, mode, a: g.start, b: g.start, over: false, id: g.id, x: e.clientX, y: e.clientY, y0: g.y0 };
+  S.hover = -1;
+  moveStroke(e.clientX, e.clientY);
+}
+function moveStroke(x, y) {
+  const st = S.stroke;
+  st.x = x; st.y = y;
+  const j = wordAt(x, y);
+  if (j >= 0) st.b = j;
+  const sp = strokePreview();
+  const ov = !!sp && sp.over.length > 0;
+  paintStroke();
+  if (ov && !st.over) wobble();   // once each time the stroke runs past the ink
+  st.over = ov;
+  autoScroll();
+}
+function endStroke(commit) {
+  const st = S.stroke;
+  if (!st) return;
+  const sp = commit ? strokePreview() : null;
+  S.stroke = null;
+  stopScroll();
+  // the click that follows the release is not a tap: a commit runs inside that pointerup; a cancelled pointer may be
+  // held on, so its own release (window, below) arms the swallow
+  if (commit) swallowAt = Date.now();
+  else { deadId = st.id; try { $('page').releasePointerCapture(st.id); } catch {} }
+  if (!commit || st.date !== S.date || !me || !P) { paintStroke(); return; }
+  if (st.a === st.b) { S.kbd = false; S.kb = st.a; tap(st.a); return; }   // ended on its start word: a tap
+  const on = st.mode === 'mark', group = [];
+  for (const i of sp ? sp.apply : EMPTY_LIST) if (markWord(i, on)) group.push([i, !on, on]);
+  pushUndo(st.date, group);
+  if (group.length) announce(`${on ? 'Marked' : 'Unmarked'} ${plural(group.length, 'word', 'words')}.`);
+  render();
+}
+const cancelStroke = () => { gest = null; if (S.stroke) endStroke(false); };
+// auto-scroll near the bar's bottom or the dock's top, 4–16 px a frame by depth; a timer backs up the frame
+let scrollRq = 0, scrollTm = 0;
+function scrollStep() {
+  const st = S.stroke;
+  if (!st) return 0;
+  const top = Math.max(0, $('bar').getBoundingClientRect().bottom), bottom = $('dock').getBoundingClientRect().top;
+  return scrollSpeed(st.y, st.y0, top, bottom);
+}
+function autoScroll() {
+  if (scrollRq || scrollTm || !scrollStep()) return;
+  const run = () => {
+    cancelAnimationFrame(scrollRq); clearTimeout(scrollTm); scrollRq = scrollTm = 0;
+    const d = scrollStep();
+    if (!d) return;
+    const y0 = window.scrollY;
+    window.scrollBy(0, Math.round(d));
+    if (window.scrollY !== y0) moveStroke(S.stroke.x, S.stroke.y);   // re-picks b, and schedules the next step
+  };
+  scrollRq = requestAnimationFrame(run);
+  scrollTm = setTimeout(run, 50);
+}
+function stopScroll() { cancelAnimationFrame(scrollRq); clearTimeout(scrollTm); scrollRq = scrollTm = 0; }
 function reveal() {
   if (!P || dv.revealed || meLoading()) return;   // a nameless reveal now would be lost when the stored name loads
   const date = S.date;
@@ -3191,9 +3394,16 @@ function buildLegend() {
   const rail = (n, c) => h('span', { class: 'rail' }, Array.from({ length: K }, (_, k) => h('i', { class: k < n ? 'spent ' + c : null })));
   const meBead = () => h('span', { class: 'me-btn' }, bead(you, 26), h('span', { class: 'badge' }, icon('me')));
 
-  const A = panel(`Tap a word to mark it in your pattern; tap it again to unmark it. You have ${K} marks a day, shown as ${K} dots.`,
+  // the swipe sample uses short words, so the row fits a phone
+  const shortW = words.filter((w) => w.length <= 5);
+  const S3 = [0, 1, 2].map((k) => shortW[k % Math.max(1, shortW.length)] || W(6 + k));
+  const three = (o) => h('span', { class: 'lg-text' }, S3.flatMap((t, k) => [k ? ' ' : null,
+    h('span', { class: 'w' + (o ? ' mine' : '') }, t, h('i', { class: 'f' + (o ? ' ' + youC : '') }), h('i', { class: 'rb' }))]));
+  const A = panel(`Tap a word to mark it in your pattern; tap it again to unmark it. Swipe across several words to mark them in one go; a swipe that starts on one of your marks clears the marks it crosses. The curved arrow undoes your last change, and so does Control or Command with Z. You have ${K} marks a day, shown as ${K} dots.`,
     row(word(W(0)), icon('next'), word(W(0), { cls: 'mine', pat: youC })),
     row(word(W(1), { cls: 'mine', pat: youC }), icon('next'), word(W(1))),
+    row(three(false), icon('next'), three(true)),
+    row(h('span', { class: 'lg-undo' }, icon('undo')), icon('next'), word(W(7), { cls: 'mine unmark', pat: youC })),
     row(rail(3, youC)));
   const B = panel('The eye reveals everyone’s marks; its number counts the other players who marked the page. Each player’s marks show as a ribbon under the word, in their pattern. The words most people marked glow butter. If a word you marked before revealing was marked by someone else too, the bubble says teelu.',
     row(h('span', { class: 'lg-btn' }, icon('eye')), h('span', { text: '3' }), icon('next'), word(W(2), { rb: [aC, bC, cC] })),
@@ -3246,6 +3456,8 @@ function render() {
     me = ready ? safe(() => NW.net.me(), null) : null;
     dv = dayView(S.date);
     if (!P || P.date !== S.date) buildPage(S.date, '');
+    if (S.stroke && (S.stroke.date !== S.date || !me)) { S.stroke = null; stopScroll(); }
+    if (S.preview === 'undo' && !undoTop()) S.preview = null;
     patchPage();
     renderBar();
     renderDock();
@@ -3275,6 +3487,7 @@ function hashDate() {
 function goDay(date) {
   today = getToday();
   if (!NW.text.isDate(date) || date < FIRST_DAY() || date > today || date === S.date) return;
+  cancelStroke();
   S.date = date;
   Object.assign(S, { spot: null, pending: null, hover: -1, kb: -1, popover: false });
   bloom = null;
@@ -3319,6 +3532,7 @@ function nextMarkable(from, dir) {
   return from;
 }
 function onEsc() {
+  if (S.stroke) return cancelStroke();
   if (!$('legend').hidden) return closeLegend();
   if (S.popover) { S.popover = false; render(); $('stack').focus({ preventScroll: true }); return; }
   if (me && S.gate.open) return closeGate();
@@ -3329,9 +3543,11 @@ function onEsc() {
 
 function wire() {
   const page = $('page'), sheet = $('sheet');
-  // Taps arrive as clicks: the browser only fires one for a tap, never for a scroll, and touch-action: manipulation
+  // Taps arrive as clicks: the browser only fires one for a tap, never for a scroll, and touch-action: pan-y pinch-zoom
   // drops the double-tap delay. The whole sheet listens so a tap a little outside a word's box still lands.
   sheet.addEventListener('click', (e) => {
+    // the click that follows a committed stroke is the stroke's, not a tap
+    if (swallowAt) { const s = Date.now() - swallowAt < 400; swallowAt = 0; if (s) return; }
     const t = e.target;
     if (!t.closest || t.closest('.fw')) return;   // function words are inert
     let w = t.closest('.w');
@@ -3343,11 +3559,51 @@ function wire() {
     tap(i);
   });
   page.addEventListener('contextmenu', (e) => e.preventDefault());
+  // Strokes (§7.5): a pointerdown only records where it began; a plain tap still arrives as a click. The stroke begins
+  // once the pointer travels far enough (touch and pen: within 30° of horizontal; vertical-first is the browser's scroll).
+  page.addEventListener('pointerdown', (e) => {
+    gest = null;
+    if (!e.isPrimary || e.button !== 0 || S.stroke || !strokeOk()) return;
+    if (e.target.closest && e.target.closest('.fw')) return;   // function words are inert, as for a click
+    if (e.pointerType !== 'mouse' && page.classList.contains('zoomed')) return;   // zoomed in, a sideways drag pans
+    const w = e.target.closest && e.target.closest('.w');
+    const start = w && page.contains(w) ? +w.getAttribute('data-i') : nearestWord(wordRects(), e.clientX, e.clientY, 12);
+    if (start < 0) return;
+    gest = { id: e.pointerId, type: e.pointerType, x0: e.clientX, y0: e.clientY, start };
+  });
   page.addEventListener('pointermove', (e) => {
+    // a move with no button held means the release went elsewhere (off the page, or a lost mouse-up): drop the press
+    if (S.stroke) { if (e.pointerId === S.stroke.id) { if (e.buttons & 1) moveStroke(e.clientX, e.clientY); else cancelStroke(); } return; }
+    if (gest && e.pointerId === gest.id) {
+      const m = pressMove(gest.type, e.clientX - gest.x0, e.clientY - gest.y0, e.buttons);
+      if (m === 'begin') return beginStroke(e);
+      if (m === 'drop') gest = null;
+    }
     if (e.pointerType !== 'mouse') return;
     const w = e.target.closest && e.target.closest('.w');
     setHover(w ? +w.getAttribute('data-i') : -1);
   });
+  page.addEventListener('pointerup', (e) => {
+    if (S.stroke && e.pointerId === S.stroke.id) endStroke(true);
+    else if (gest && e.pointerId === gest.id) gest = null;
+  });
+  page.addEventListener('pointercancel', (e) => {
+    if ((S.stroke && e.pointerId === S.stroke.id) || (gest && e.pointerId === gest.id)) cancelStroke();
+  });
+  // anywhere on the window: a press disarms the swallow (no click follows a moved touch, so it would eat the next tap);
+  // a release ends a pending press that #page never saw go up, and a cancelled stroke's release arms the swallow
+  window.addEventListener('pointerdown', () => { swallowAt = 0; deadId = null; }, true);
+  const lift = (e) => {
+    if (gest && e.pointerId === gest.id) gest = null;
+    if (deadId !== null && e.pointerId === deadId) { deadId = null; if (e.type === 'pointerup') swallowAt = Date.now(); }
+  };
+  window.addEventListener('pointerup', lift, true);
+  window.addEventListener('pointercancel', lift, true);
+  // only the page's own capture: a touch is implicitly captured by the word it began on, and that capture moving to
+  // the page fires lostpointercapture on the word, which bubbles here
+  page.addEventListener('lostpointercapture', (e) => { if (e.target === page && S.stroke && e.pointerId === S.stroke.id) cancelStroke(); });
+  // once a stroke has begun the page holds the touch: a later vertical turn (wrapping to the next line) does not scroll
+  page.addEventListener('touchmove', (e) => { if (S.stroke && e.cancelable) e.preventDefault(); }, { passive: false });
   page.addEventListener('pointerleave', () => setHover(-1));
   page.addEventListener('keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey || !P) return;
@@ -3405,6 +3661,7 @@ function wire() {
     if (e.key === 'Tab' && legendPinned && !$('legend').hidden) { e.preventDefault(); $('legend').focus(); return; }
     if (legendPinned && !$('legend').hidden) return;   // and nothing reaches the page behind it (E, Alt+←/→)
     if (typing(e.target)) return;
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); return; }
     if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); step(e.key === 'ArrowLeft' ? -1 : 1); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if ((e.key === 'e' || e.key === 'E') && !e.repeat) { e.preventDefault(); reveal(); return; }
@@ -3421,6 +3678,7 @@ function wire() {
     const follow = () => {
       const off = coarse ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
       $('dock').style.setProperty('--kb', off + 'px');
+      $('page').classList.toggle('zoomed', vv.scale > 1.01);   // pinch-zoomed in: a sideways drag pans the view (CSS)
     };
     vv.addEventListener('resize', follow);
     vv.addEventListener('scroll', follow);
@@ -3569,7 +3827,7 @@ function listen() {
   on('conn', queueRender);
   on('ack', () => flash($('save')));
   on('history', () => { returning(); queueSky(); queueRender(); });
-  on('identity', () => { S.spot = null; returning(); queueRender(); queueSky(); });
+  on('identity', () => { S.spot = null; cancelStroke(); undoS.clear(); returning(); queueRender(); queueSky(); });
   // a new day began while this page is open: the page stays, › beats
   on('today', (e) => { rolled = (e && e.date) || getToday(); queueRender(); queueSky(); });
 }
