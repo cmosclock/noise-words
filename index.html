@@ -1,0 +1,3517 @@
+<!doctype html>
+<!-- Built by dev/build.mjs; edit src/ and rebuild. -->
+<html lang="en" translate="no">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' wss: https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="google" content="notranslate">
+<meta name="format-detection" content="telephone=no, date=no, email=no, address=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#24222f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -7 34 34'%3E%3Cdefs%3E%3Cpattern id='s' width='4' height='4' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'%3E%3Crect width='4' height='4' fill='%23c6b6f2'/%3E%3Crect width='2' height='4' fill='%23f3c6ae'/%3E%3C/pattern%3E%3C/defs%3E%3Crect y='2.25' width='26' height='3.5' rx='1.75' fill='%23aba4c2'/%3E%3Crect y='8.25' width='34' height='3.5' rx='1.75' fill='url(%23s)'/%3E%3Crect y='14.25' width='20' height='3.5' rx='1.75' fill='%23aba4c2'/%3E%3C/svg%3E">
+<title>Noise Words</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300..800&display=swap">
+<style>
+/* Layout: one frosted sheet of noise text in the hearth of the sky, a bar above it and a dock pill below.
+   Ollune's language throughout: no words on screen except the noise text itself, numerals joined by middle dots,
+   and "ollu"/"teelu" in the bubble. Dark-only, like Ollune and Five Beads. */
+:root {
+  color-scheme: dark;
+
+  /* dusk surfaces: twilight plum-slate, never black */
+  --dusk-deep: #1e1c27;
+  --dusk-0: #24222f;
+  --dusk-1: #2c2939;
+  --dusk-2: #36324a;
+  --dusk-3: #403b56;
+  --dusk-glow: #322e44;
+  --line: #4b4662;
+
+  /* ink */
+  --ink: #e6e1f0;
+  --ink-dim: #aba4c2;
+  --ink-faint: #736c8c; /* decorative only, never text */
+
+  /* accents, one job each */
+  --peach: #f3c6ae;  /* first side: a filled core */
+  --lilac: #c6b6f2;  /* second side: a slotted halo */
+  --rose: #f2b3c8;   /* now and here: whose turn, focus, last bead, your table */
+  --butter: #f0e1a4; /* the win */
+  --mint: #a6dec9;   /* online */
+  --sky: #a7c7f0;    /* coil decoration only */
+
+  --focus: color-mix(in oklab, var(--rose) 75%, transparent);
+  --selection: color-mix(in oklab, var(--rose) 35%, transparent);
+
+  /* type */
+  --font: 'Nunito', 'Hiragino Maru Gothic ProN', 'Yu Gothic UI', 'Meiryo', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --wt-body: 380;
+  --wt-num: 520;
+  --wt-word: 560;
+  --track-meta: 0.06em;
+
+  /* shape */
+  --r-md: 12px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+  --shadow-1: 0 4px 16px rgb(14 12 22 / 0.35);
+  --shadow-2: 0 12px 40px rgb(14 12 22 / 0.5);
+
+  /* motion */
+  --ease-settle: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-hover: 140ms;
+  --t-whisper: 160ms;
+  --t-bloom: 500ms;
+  --t-thread: 600ms;
+  --t-breath: 6s;
+}
+/* Noise Words additions */
+:root {
+  --bar-h: 52px;
+  --dock-h: 48px;      /* pill height: 36 px controls + 2 × 6 px padding */
+  --frost: color-mix(in oklab, var(--dusk-0) 74%, transparent);
+  --hairline: 1px solid color-mix(in oklab, var(--line) 55%, transparent);
+}
+@media (pointer: coarse) { :root { --dock-h: 56px; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100svh;
+  overflow-x: hidden;
+  background: var(--dusk-0);
+  color: var(--ink);
+  font: var(--wt-body) 15px/1.45 var(--font);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--selection); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button { font: inherit; color: inherit; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.icon { display: block; flex: none; width: 18px; height: 18px; }
+
+.world { position: relative; min-height: 100svh; }
+/* fixed behind everything: the sheet scrolls over a still sky */
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+
+/* --- shared glyph controls (Five Beads) ------------------------------------------------ */
+.round {
+  position: relative;
+  width: 28px; height: 28px; padding: 0; flex: none;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%;
+  background: transparent; color: var(--ink-dim);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-hover) var(--ease-soft), color var(--t-hover) var(--ease-soft), opacity var(--t-hover) var(--ease-soft);
+}
+.round .icon { width: 16px; height: 16px; }
+.round:hover, .round:focus-visible { background: var(--dusk-2); color: var(--ink); }
+.round.inert { opacity: 0.35; cursor: default; }
+.round.inert:hover { background: transparent; color: var(--ink-dim); }
+.round.mirror .icon { transform: scaleX(-1); }
+#legend-btn[aria-expanded='true'] { background: var(--dusk-3); color: var(--ink); }
+
+.gbtn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 36px; height: 36px; padding: 0 8px; flex: none;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
+  background: var(--dusk-2); color: var(--ink-dim);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-hover) var(--ease-soft), color var(--t-hover) var(--ease-soft), opacity var(--t-hover) var(--ease-soft);
+}
+.gbtn:hover:not(:disabled) { background: var(--dusk-3); color: var(--ink); }
+.gbtn.primary { background: color-mix(in oklab, var(--rose) 20%, var(--dusk-1)); border-color: color-mix(in oklab, var(--rose) 55%, transparent); color: var(--ink); }
+.gbtn.primary:hover:not(:disabled) { background: color-mix(in oklab, var(--rose) 30%, var(--dusk-1)); }
+.gbtn:disabled { opacity: 0.35; cursor: default; }
+.gbtn .num { font-size: 12px; font-weight: var(--wt-num); }
+
+/* Ollune's slit-beat: a rose ring that breathes around whatever wants a first touch */
+@keyframes beat {
+  0%, 100% { opacity: 0.2; transform: scale(0.92); }
+  50% { opacity: 0.8; transform: scale(1.06); }
+}
+.beat, .beat3, .beat8 { position: relative; }
+.beat::before, .beat3::before, .beat8::before {
+  content: ''; position: absolute; inset: -3px; border-radius: inherit;
+  border: 1.5px solid var(--rose); pointer-events: none; opacity: 0;
+  animation: beat 2.4s var(--ease-soft) infinite;
+  animation-delay: var(--beat-at, 0s); /* negative: resume a beat that started before this node existed */
+}
+.beat3::before { animation-iteration-count: 3; }
+.beat8::before { animation-iteration-count: 8; }
+/* one 600 ms pulse */
+@keyframes pulse { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.35); } }
+.pulse { position: relative; }
+.pulse::before {
+  content: ''; position: absolute; inset: -2px; border-radius: 50%;
+  border: 1.5px solid var(--rose); pointer-events: none; opacity: 0;
+  animation: pulse 600ms var(--ease-soft);
+}
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes arrive { from { opacity: 0; transform: scale(0.6); } }
+@keyframes winglow { from { opacity: 0.65; } to { opacity: 1; } }
+.dots circle { animation: dot 1.2s var(--ease-soft) infinite; }
+.dots circle:nth-child(2) { animation-delay: 0.3s; }
+.dots circle:nth-child(3) { animation-delay: 0.6s; }
+@keyframes dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+/* pattern beads: NW.pattern.bead() sets size, --fd (dot size) and --fi (dot inset); NW.pattern.ensure() supplies --pat */
+.pbead {
+  position: relative; display: inline-block; flex: none; vertical-align: middle;
+  border-radius: 50%;
+  background: var(--pat) 0 0 / 6px 6px;
+}
+.pbead .fd { position: absolute; width: var(--fd); height: var(--fd); border-radius: 50%; background: var(--dusk-deep); }
+/* pattern.js names the dots fd-n/e/s/w (a bare .w would collide with the markable-word class) */
+.pbead .fd-n { top: var(--fi); left: 50%; transform: translate(-50%, -50%); }
+.pbead .fd-s { bottom: var(--fi); left: 50%; transform: translate(-50%, 50%); }
+.pbead .fd-e { right: var(--fi); top: 50%; transform: translate(50%, -50%); }
+.pbead .fd-w { left: var(--fi); top: 50%; transform: translate(-50%, -50%); }
+
+/* --- top bar ------------------------------------------------------------------------------ */
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  padding-top: env(safe-area-inset-top);
+  background: var(--frost);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--hairline);
+}
+.bar-in { width: min(680px, 100% - 32px); height: var(--bar-h); margin-inline: auto; display: flex; align-items: center; gap: 8px; }
+#mark { width: 34px; height: 20px; flex: none; margin-right: 4px; }
+#mark .b { fill: var(--ink-faint); }
+.daynav { display: flex; align-items: center; gap: 4px; }
+.date { display: grid; justify-items: center; gap: 3px; min-width: 52px; padding: 0 2px; }
+.date .dn { font-size: 12px; line-height: 14px; font-weight: var(--wt-num); color: var(--ink-dim); letter-spacing: var(--track-meta); white-space: nowrap; }
+.wd { display: flex; align-items: center; gap: 4px; height: 4px; }
+.wd i { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-faint); }
+.wd i:nth-child(6) { margin-left: 2px; }   /* 4 px gap + 2 px: the weekend sits 6 px apart */
+.wd i.we { background: color-mix(in oklab, var(--rose) 45%, var(--ink-faint)); }
+.wd i.on { background: var(--ink); }
+.wd i.we.on { background: var(--rose); }
+.bar .gap { flex: 1; min-width: 0; }
+.stack {
+  position: relative; flex: none;
+  display: flex; align-items: center; height: 28px; padding: 0 4px;
+  border: 0; border-radius: var(--r-pill); background: transparent; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-hover) var(--ease-soft);
+}
+.stack:hover, .stack:focus-visible, .stack[aria-expanded='true'] { background: var(--dusk-2); }
+.stack::after { content: ''; position: absolute; inset: -8px -2px; }
+.stack .pbead { box-shadow: 0 0 0 1.5px var(--dusk-0); }
+.stack .pbead + .pbead { margin-left: -5px; }
+.stack .pbead.away { opacity: 0.45; }   /* Five Beads .seat.gone */
+.stack .pbead.arrive { animation: arrive 320ms var(--ease-settle); }
+.stack .n { margin-left: 4px; font-size: 12px; font-weight: var(--wt-num); color: var(--ink-dim); }
+.conn { position: relative; width: 16px; height: 16px; flex: none; display: grid; place-items: center; color: var(--ink-dim); }
+.conn .icon { width: 14px; height: 14px; }
+.conn[data-state='on'] { color: var(--mint); }
+.conn[data-state='on'] .icon { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 3px color-mix(in oklab, var(--mint) 20%, transparent); }
+.conn[data-state='wait'] .icon { animation: spin 2.4s linear infinite; }
+.conn .n { position: absolute; left: 13px; top: -5px; font-size: 10px; font-weight: var(--wt-num); color: var(--ink-dim); }
+.conn:has(.n) { margin-right: 6px; }
+.save { position: relative; width: 4px; height: 4px; flex: none; border-radius: 50%; background: var(--peach); opacity: 0.55; transition: opacity var(--t-whisper) var(--ease-soft); }
+.save.pulse { opacity: 1; }
+.save.pulse::before { inset: -4px; border-color: var(--peach); }
+
+/* --- the sheet and its page of words ---------------------------------------------------------- */
+.sheet {
+  position: relative;
+  width: min(680px, 100% - 32px);
+  margin: 16px auto calc(16px + env(safe-area-inset-bottom));
+  padding: 32px 40px calc(var(--dock-h) + 32px);
+  border-radius: var(--r-xl);
+  background: var(--frost);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: var(--hairline);
+  box-shadow: var(--shadow-2);
+  transition: border-color var(--t-hover) var(--ease-soft);
+}
+.sheet:has(.page:focus-visible) { border-color: var(--focus); }
+.page {
+  outline: none;
+  font-size: 18px; font-weight: var(--wt-body); line-height: 2.05;
+  text-wrap: pretty; overflow-wrap: anywhere;
+  color: var(--ink);
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-drag: none;
+}
+.page p { margin: 0 0 0.5em; }
+.page p:last-child { margin-bottom: 0; }
+.page.swap { animation: fade-in var(--t-whisper) var(--ease-soft); }
+.page.arrive p { animation: fade-in 400ms var(--ease-soft) both; }
+.page.arrive p:nth-child(2) { animation-delay: 400ms; }
+.page.arrive p:nth-child(3) { animation-delay: 800ms; }
+.fw { color: var(--ink-dim); cursor: default; }
+.nb { white-space: nowrap; }   /* a word and its punctuation never part at a line end */
+
+/* a markable word: an inline-block spanning the whole 2.05em line box, so its hit area is the full line height.
+   Geometry in em of the text size (no descenders): baseline about 1.354em from the top. */
+.w {
+  --bd: 0ms;
+  display: inline-block; position: relative; isolation: isolate;
+  padding-inline: 0.1em; margin-inline: -0.1em;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color var(--t-whisper) var(--ease-soft) var(--bd), text-shadow 200ms var(--ease-soft) var(--bd);
+}
+.w .f {
+  position: absolute; z-index: -1; left: 0; right: 0; top: 0.30em; height: 1.22em;
+  border-radius: 6px;
+  background: var(--pat) 0 0 / 6px 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-whisper) var(--ease-soft), box-shadow 200ms var(--ease-soft) var(--bd);
+}
+.w .rb {
+  position: absolute; left: 0.1em; right: 0.1em; top: 1.65em; height: 5px;
+  display: flex; gap: 1px; border-radius: 2.5px; overflow: hidden;
+  pointer-events: none;
+}
+.w .rb b { flex: 1; min-width: 0; background: var(--pat) 0 0 / 6px 6px; transform-origin: left center; transition: opacity var(--t-whisper) var(--ease-soft); }
+.w .rb b.grow { animation: grow 320ms var(--ease-settle) var(--d, 0ms) both; }
+.w .rb b.out { opacity: 0; }
+@keyframes grow { from { transform: scaleX(0); } }
+/* outlines and rings sit on the fill box, not on the whole line box */
+.w::after { content: ''; position: absolute; left: 0; right: 0; top: 0.30em; height: 1.22em; border-radius: 6px; pointer-events: none; }
+.w.beat3::before, .w.spark::before { inset: auto; left: -3px; right: -3px; top: calc(0.30em - 3px); height: calc(1.22em + 6px); border-radius: 8px; }
+
+.w.mine { color: var(--dusk-deep); }
+.w.mine .f { opacity: 1; }
+.w.ghost .f { opacity: 0.3; }
+.w.unmark .f { opacity: 0.35; }
+.w.unmark::after { outline: 1.5px dashed var(--ink-dim); outline-offset: 1px; }
+.w.pending::after { outline: 1.5px dashed var(--rose); }
+.w.kb::after { outline: 1.5px dashed var(--rose); outline-offset: 2px; }
+.w.butter { color: var(--butter); text-shadow: 0 0 10px color-mix(in oklab, var(--butter) 45%, transparent); }
+.w.mine.butter { color: var(--dusk-deep); text-shadow: none; }
+.w.mine.butter .f { box-shadow: 0 0 0 1.5px var(--butter); }
+.w.glow-in { animation: winglow 600ms ease-in-out var(--bd) 2 alternate-reverse; }
+.w.spark::before {
+  content: ''; position: absolute; pointer-events: none; opacity: 0;
+  border: 1.5px solid var(--butter);
+  animation: pulse 600ms var(--ease-soft);
+}
+/* first run: a neutral ghost fill breathes inside a rose ring until the first mark */
+.w.hint .f { background: repeating-linear-gradient(135deg, var(--ink-faint) 0 2px, transparent 2px 5px); animation: hint 2.4s var(--ease-soft) infinite alternate; }
+@keyframes hint { from { opacity: 0.3; } to { opacity: 0.55; } }
+/* spotlight: one player's marks as full fills, everything else steps back */
+.page[data-spot] .w.mine:not(.lit) .f, .page[data-spot] .w .rb b { opacity: 0.2; }
+.page[data-spot] .w.lit .f { opacity: 1; }
+.page[data-spot] .w.lit { color: var(--dusk-deep); text-shadow: none; }
+.page[data-spot] .w.mine:not(.lit) { color: var(--ink); }
+
+/* --- dock ------------------------------------------------------------------------------------ */
+.dock {
+  --kb: 0px;   /* how far the on-screen keyboard covers the layout viewport (visualViewport) */
+  position: fixed; z-index: 25;
+  left: 0; right: 0; margin-inline: auto;
+  bottom: calc(12px + env(safe-area-inset-bottom) + var(--kb));
+  width: max-content; max-width: calc(100% - 24px); min-height: var(--dock-h);
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--dusk-2) 96%, transparent);
+  box-shadow: var(--shadow-2);
+}
+.dock .wait { color: var(--ink-faint); padding: 0 8px; }
+.me-btn { width: 36px; height: 36px; }
+.me-btn .pbead { box-shadow: 0 0 0 1px var(--dusk-1); }
+.me-btn .badge { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: var(--dusk-2); color: var(--ink); display: grid; place-items: center; }
+.me-btn .badge .icon { width: 10px; height: 10px; }
+.me-btn.slide { animation: slide 320ms var(--ease-settle); }
+@keyframes slide { from { transform: translate(var(--sx, 0), var(--sy, 0)); } }
+.rail { display: flex; align-items: center; gap: 5px; padding: 0 2px; }
+.rail i { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); }
+.rail i.spent { background: var(--pat) 0 0 / 6px 6px; box-shadow: 0 0 0 1px var(--dusk-1); }
+.rail.wob { animation: wob 300ms linear; }
+@keyframes wob { 0%, 33.3%, 66.6%, 100% { transform: none; } 8.3%, 41.6%, 75% { transform: translateX(3px); } 25%, 58.3%, 91.6% { transform: translateX(-3px); } }
+.eye .num:empty { display: none; }
+
+/* the name gate replaces the dock content */
+.gate { display: flex; align-items: center; gap: 12px; margin: 0; border-radius: var(--r-pill); }
+.gate > .icon { width: 16px; height: 16px; color: var(--ink-dim); }
+.gate input {
+  width: clamp(80px, 100vw - 240px, 200px); min-width: 0; height: 32px; padding: 0 2px;
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0; outline: none;
+  background: transparent; color: var(--ink);
+  font: var(--wt-word) 16px var(--font);
+  caret-color: var(--pa, var(--rose));
+  user-select: text; -webkit-user-select: text;
+  transition: border-color var(--t-hover) var(--ease-soft);
+}
+.gate input:focus { border-bottom-color: color-mix(in oklab, var(--pa, var(--rose)) 70%, transparent); }
+.pv { position: relative; width: 26px; height: 26px; flex: none; display: grid; place-items: center; }
+.pv .pbead { animation: fade-in var(--t-whisper) var(--ease-soft); transition: opacity var(--t-whisper) var(--ease-soft); }
+.pv.busy .pbead { opacity: 0.4; }
+.pv > .icon { position: absolute; inset: 2px; width: 22px; height: 22px; color: var(--ink-dim); animation: spin 2.4s linear infinite; }
+.chip-add { width: 26px; height: 26px; border-radius: 50%; border: 1.5px dashed var(--ink-faint); }
+
+/* --- presence popover ----------------------------------------------------------------------- */
+.popover {
+  position: fixed; z-index: 30;
+  min-width: 120px; max-height: 60svh; overflow: auto;
+  display: grid; gap: 2px; padding: 6px;
+  border-radius: var(--r-md);
+  background: color-mix(in oklab, var(--dusk-2) 96%, transparent);
+  box-shadow: var(--shadow-2);
+  animation: fade-in var(--t-whisper) var(--ease-soft);
+}
+.prow {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 44px; padding: 0 12px 0 9px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--ink-dim); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-hover) var(--ease-soft);
+}
+.prow:hover:not(.veiled), .prow:focus-visible { background: var(--dusk-3); }
+.prow.veiled { opacity: 0.6; cursor: default; }
+.prow .ring { position: relative; display: grid; place-items: center; border-radius: 50%; }
+.prow.on .ring::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--rose); }
+.prow .live { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); flex: none; }
+.prow .num { margin-left: auto; font-size: 12px; font-weight: var(--wt-num); }
+
+/* the companion bubble */
+.bubble {
+  position: fixed; z-index: 30; left: 50%; top: calc(var(--bar-h) + 12px + env(safe-area-inset-top)); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  min-height: 30px; padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--dusk-2) 96%, transparent);
+  box-shadow: var(--shadow-1);
+  color: var(--ink); font-size: 14px; font-weight: var(--wt-word);
+  pointer-events: none;
+  animation: bubble 2.86s linear both;
+}
+.bubble .icon { width: 16px; height: 16px; }
+.bubble .spark { color: var(--butter); }
+@keyframes bubble { 0% { opacity: 0; } 5.6% { opacity: 1; } 89.5% { opacity: 1; } 100% { opacity: 0; } }
+
+/* --- legend: samples only -------------------------------------------------------------------- */
+.legend-scrim { position: fixed; inset: 0; z-index: 40; background: color-mix(in oklab, var(--dusk-deep) 55%, transparent); }
+.legend {
+  position: fixed; left: 50%; top: 50%; z-index: 41;
+  transform: translate(-50%, -50%);
+  width: min(600px, 100% - 32px); max-height: 86svh; overflow: auto;
+  display: flex; flex-wrap: wrap; gap: 14px 26px; justify-content: center;
+  padding: 20px 24px;
+  border-radius: var(--r-xl);
+  background: color-mix(in oklab, var(--dusk-2) 96%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-2);
+  outline: none;
+  animation: fade-in var(--t-whisper) var(--ease-soft);
+}
+.lg-panel { display: grid; gap: 10px; align-content: start; min-width: 150px; }
+.lg-row { display: flex; align-items: center; gap: 7px; color: var(--ink-dim); font-size: 12px; font-weight: var(--wt-num); }
+.lg-row .icon { width: 16px; height: 16px; }
+.lg-row .butter { color: var(--butter); }
+.lg-row .mint { color: var(--mint); }
+.lg-row .half { opacity: 0.45; }
+.lead { width: 14px; height: 1px; background: var(--ink-faint); flex: none; }
+.lg-text { font-size: 15px; line-height: 2.05; font-weight: var(--wt-body); color: var(--ink); white-space: nowrap; }
+.lg-ring { position: relative; display: grid; place-items: center; border-radius: 50%; }
+.lg-ring::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--rose); }
+.lg-line { width: 40px; height: 16px; border-bottom: 1px solid var(--line); }
+.lg-btn { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--r-pill); border: 1px solid color-mix(in oklab, var(--rose) 55%, transparent); background: color-mix(in oklab, var(--rose) 20%, var(--dusk-1)); color: var(--ink); }
+.lg-btn .icon { width: 14px; height: 14px; }
+.lg-row .me-btn { width: 32px; height: 32px; position: relative; display: grid; place-items: center; }
+.lg-text .w { cursor: default; }
+.lg-row .save { opacity: 1; }
+.lg-spin { animation: spin 2.4s linear infinite; }
+
+/* --- narrow, short, coarse ------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  #mark { display: none; }
+  .bar { background: color-mix(in oklab, var(--dusk-1) 96%, transparent); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .bar-in { gap: 6px; }
+  .sheet {
+    padding: 20px 16px calc(var(--dock-h) + 32px);
+    background: color-mix(in oklab, var(--dusk-1) 96%, transparent);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  .page { font-size: 17px; }
+}
+@media (max-height: 480px) { .bar { position: relative; } }
+@media (pointer: coarse) {
+  .gbtn { min-width: 44px; height: 44px; }
+  .me-btn { width: 44px; height: 44px; }
+  .round::after { content: ''; position: absolute; inset: -8px; }
+  .dock .round::after { inset: -4px; }
+}
+@media (max-width: 400px) { .dock, .gate { gap: 8px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+  .dots circle { opacity: 0.7; }
+  .w.hint .f { opacity: 0.45; }
+  /* still, not gone: the bubble stays up until it is removed, and the beats rest as static rings */
+  .bubble { animation: none !important; }
+  .beat::before, .beat3::before, .beat8::before { animation: none !important; opacity: 0.7; }
+  .page.arrive p, .page.swap { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="world" id="world">
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <header class="bar" id="bar">
+    <div class="bar-in">
+      <svg viewBox="0 0 34 20" aria-hidden="true" focusable="false" id="mark"></svg>
+      <div class="daynav" id="daynav"></div>
+      <span class="gap"></span>
+      <button type="button" class="stack" id="stack" aria-expanded="false" aria-controls="popover" hidden></button>
+      <span class="conn" id="conn" data-state="wait" role="img" aria-label="connecting"></span>
+      <span class="save" id="save" aria-hidden="true" hidden></span>
+      <button type="button" class="round" id="retry" aria-label="Reload and try connecting again" hidden></button>
+      <button type="button" class="round" id="legend-btn" aria-label="How to play" aria-expanded="false" aria-controls="legend"></button>
+    </div>
+  </header>
+
+  <main class="sheet" id="sheet">
+    <h1 class="sr-only">Noise Words</h1>
+    <div class="page" id="page" tabindex="0" role="application" aria-describedby="status"
+      aria-label="Today's page of noise words. Arrow keys move between words, Enter marks or unmarks one. You can mark 7 words a day. Other players' marks stay hidden until you reveal them with the eye button."></div>
+  </main>
+
+  <nav class="dock" id="dock" aria-label="Your name, marks left and reveal"></nav>
+  <div class="popover" id="popover" role="dialog" aria-label="Players on this page" hidden></div>
+  <div class="legend-scrim" id="legend-scrim" hidden></div>
+  <div class="legend" id="legend" role="dialog" aria-label="How to play" tabindex="-1" hidden></div>
+  <p class="sr-only" id="status" aria-live="polite"></p>
+  <p class="sr-only" id="say" aria-live="polite"></p>
+</div>
+<script>
+// ---- src/text.js
+// The frozen noise-text generator: one deterministic page of soft pseudo-words per date (NW.text).
+// This block is normative and copied verbatim from docs/spec.md §6.1; test/text.test.mjs checks that it
+// still matches the spec and pins the golden vectors (§9.1). Any change to the output is a new protocol:
+// it becomes 'noisewords/2' with 'nw2:' seeds, because every sheet carries the page hash it was marked on.
+(() => {
+'use strict';
+const NW = (globalThis.NW = globalThis.NW || {});
+// uint32 PRNG + FNV-1a only: no transcendental Math, no Math.random, no toLocale*, no locale-dependent sorting
+const fnv = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i) & 0xff; h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+const hash8 = (s) => fnv(s).toString(16).padStart(8, '0');
+function rng(seed) {
+  let s = seed >>> 0;
+  const next = () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return (t ^ (t >>> 14)) >>> 0; };
+  const below = (n) => next() % n;
+  const pick = (tab) => { let tot = 0; for (const e of tab) tot += e[1]; let r = below(tot); for (const e of tab) { if (r < e[1]) return e[0]; r -= e[1]; } };
+  return { below, pick };
+}
+// letters: a b d e f h i k l m n o r s t u v (no descenders: the band under the baseline holds ribbons)
+const ONSET = [['l',12],['n',10],['m',8],['t',8],['s',7],['v',5],['r',5],['k',5],['h',3],['b',3],['d',3],['f',2]];
+const CLUSTER = [['bl',1],['fl',1],['sl',1],['tr',1]];
+const NUC = [['a',12],['e',11],['i',9],['o',11],['u',10],['ee',3],['oo',2],['ai',2],['ou',2]];
+const CODA = [['n',10],['l',8],['s',4],['r',3],['m',3]];
+const SYL = [[2,56],[3,34],[4,10]];
+const FIRST = [['CV',58],['CVC',20],['V',12],['VC',10]];
+const LATER = [['CV',74],['CVC',26]];
+const ENDS = [['a',1],['o',1],['en',1],['el',1],['is',1]];
+const FN = [['o',600],['la',500],['en',333],['mi',250],['su',200],['ti',167],['ne',143],['ka',125],['vo',111],['esi',100]];
+const ENDING = [['.',78],['?',14],['…',5],['!',3]];
+const Z64 = [1000,660,517,435,381,341,311,287,268,251,237,225,215,205,197,189,183,177,171,166,161,157,152,149,145,142,138,135,133,130,127,125,123,121,118,116,115,113,111,109,108,106,105,103,102,101,99,98,97,96,95,93,92,91,90,89,88,87,87,86,85,84,83,82];
+const BLOCK = ['anal','anus','arse','ass','tit','teta','slut','shit','merd','fick','fitt','fuk','foda','kunt','kut','kurv','suka','blad','hure','hui','homo','kill','dead','die','idiot','ollu','teelu','lune'];
+const ok = (w) => w.length >= 4 && w.length <= 11 && !/[^aeiou]{3}/.test(w) && !/(.)\1\1/.test(w) && !/^[^aeiou][aeiou][^aeiou]e$/.test(w) && !BLOCK.some((b) => w.includes(b));
+function word(R, n) {
+  let w = '';
+  for (let k = 0; k < n; k++) {
+    const tpl = R.pick(k === 0 ? FIRST : LATER);
+    let on = '';
+    if (tpl[0] === 'C') {
+      on = k === 0 && R.below(100) < 6 ? R.pick(CLUSTER) : R.pick(ONSET);
+      if (k > 0 && 'lnmst'.includes(on) && /[^aeiou][aeiou]$/.test(w) && R.below(100) < 10) on += on;
+    }
+    const nu = R.pick(NUC);
+    let co = tpl.endsWith('VC') ? R.pick(CODA) : '';
+    if (k === n - 1 && co && R.below(100) < 30) co = '';
+    w += on + nu + co;
+  }
+  return w;
+}
+let LEX = null;
+function lexicon() {
+  if (LEX) return LEX;
+  const R = rng(fnv('nw1:lexicon')), words = [], cast = [], seen = new Set();
+  while (words.length < 1024) { const w = word(R, R.pick(SYL)); if (ok(w) && !seen.has(w)) { seen.add(w); words.push(w); } }
+  while (cast.length < 7) {
+    const stem = word(R, 2 + R.below(2)).replace(/[aeiou]+[^aeiou]*$/, '');
+    const w = stem + R.pick(ENDS);
+    if (/[aeiou]/.test(stem) && ok(w) && !seen.has(w)) { seen.add(w); cast.push(w); }
+  }
+  return (LEX = { words, cast });
+}
+const SYNODIC = 2551443, MOON_EPOCH = Date.UTC(2000, 0, 6, 18, 14) / 1000;
+const cache = new Map();
+function page(date) {
+  if (cache.has(date)) return cache.get(date);
+  const { words: WORDS, cast: CAST } = lexicon();
+  const [y, m, d] = date.split('-').map(Number);
+  const R = rng(fnv('nw1:' + date));
+  const picked = new Set(), types = [];
+  while (types.length < 64) { const i = R.below(1024); if (!picked.has(i)) { picked.add(i); types.push({ w: WORDS[i], key: R.below(16) }); } }
+  types.sort((a, b) => (a.w.length * 4 + a.key) - (b.w.length * 4 + b.key) || (a.w < b.w ? -1 : a.w > b.w ? 1 : 0));
+  const DAY = types.map((t, r) => [t.w, Z64[r]]);
+  const name = CAST[R.below(7)];
+  const T = 100 + R.below(17), third = (T / 3) | 0, toks = [];
+  [third, third, T - 2 * third].forEach((target, p) => {
+    for (let n = 0; n < target; ) {
+      const L = Math.min(4 + ((R.below(13) * R.below(13)) / 12 | 0), Math.max(4, target - n));
+      const sent = [];
+      let prev = null, prevFn = false;
+      for (let i = 0; i < L; i++) {
+        const fp = i === 0 ? 30 : prevFn ? 10 : 40;
+        let t, k;
+        for (let tries = 0; tries < 8; tries++) {
+          if (i < L - 1 && R.below(100) < fp) { t = R.pick(FN); k = 'f'; }
+          else if (R.below(100) < 4) { t = name; k = 'n'; }
+          else { t = R.pick(DAY); k = 'c'; }
+          if (t !== prev) break;
+        }
+        sent.push({ t, k, p, end: '' }); prev = t; prevFn = k === 'f';
+      }
+      if (L >= 7 && R.below(2) === 0) sent[Math.max(1, Math.min(L - 3, (L * (35 + R.below(31)) / 100) | 0))].end = ',';
+      sent[L - 1].end = R.pick(ENDING);
+      toks.push(...sent); n += L;
+    }
+  });
+  // easter eggs, drawn after the text so they never perturb it
+  const contentIn = (p) => toks.filter((t) => t.p === p && t.k === 'c');
+  const age = (((Date.UTC(y, m - 1, d, 12) / 1000 - MOON_EPOCH) % SYNODIC) + SYNODIC) % SYNODIC;
+  let egg = '';
+  if (age >= 1212192 && age < 1298592) { const c = contentIn(1); Object.assign(c[R.below(c.length)], { t: 'lune', k: 'e' }); egg = 'lune'; }
+  else if (R.below(9) === 0) { const c = contentIn(2); Object.assign(c[R.below(c.length)], { t: 'teelu', k: 'e' }); egg = 'teelu'; }
+  if (weekday(date) === 0) { toks.unshift({ t: 'ollu', k: 'e', p: 0, end: ',' }); egg = egg ? egg + '+ollu' : 'ollu'; }
+  let start = true;
+  toks.forEach((t, i) => {
+    t.i = i;
+    t.s = start || t.k === 'n' ? t.t[0].toUpperCase() + t.t.slice(1) : t.t;   // display form
+    t.mk = t.k !== 'f';                                                          // markable
+    start = t.end !== '' && t.end !== ',';
+    Object.freeze(t);
+  });
+  const text = [0, 1, 2].map((p) => toks.filter((t) => t.p === p).map((t) => t.s + t.end).join(' ')).join('\n\n');
+  const out = Object.freeze({ date, tokens: Object.freeze(toks), count: toks.length, text, hash: hash8(text), egg, name });
+  cache.set(date, out);
+  if (cache.size > 16) cache.delete(cache.keys().next().value);
+  return out;
+}
+const pad = (n) => String(n).padStart(2, '0');
+const fmt = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+function dayKey(ms) { const dt = new Date(ms); return dt.getHours() < 4 ? fmt(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() - 1)) : fmt(dt); }
+function addDays(date, n) { const [y, m, d] = date.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
+function weekday(date) { const [y, m, d] = date.split('-').map(Number); return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7; }   // 0 = Monday
+const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && addDays(s, 0) === s;
+NW.text = Object.freeze({ page, hash8, dayKey, addDays, weekday, isDate, FIRST_DAY: '2026-10-01', DAY_START_HOUR: 4 });
+})();
+
+// ---- src/pattern.js
+// Pattern identity for Noise Words: a name becomes a secret key, and a pubkey becomes two pastel hues,
+// a 6×6 tile motif and up to four fingerprint dots. That pattern is the only way players are told apart:
+// your marks fill words with it, other players' marks are 5 px ribbons of it, and beads show it in the round.
+// Classic script: attaches NW.pattern and touches no DOM at load time, so node tests can load it in a vm.
+(() => {
+'use strict';
+const NW = (globalThis.NW = globalThis.NW || {});
+
+// ---- names and secrets ----------------------------------------------------------------------------
+// The name is never stored or shown; it only seeds the key. The same name on another device is the same player.
+function normalizeName(s) {
+  if (typeof s !== 'string') return '';
+  const n = s.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+  return n.length > 64 ? '' : n;   // UTF-16 length, matching the input's maxlength
+}
+
+const N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;   // secp256k1 group order
+const hex = (u8) => Array.from(u8, (x) => x.toString(16).padStart(2, '0')).join('');
+const big = (u8) => BigInt('0x' + hex(u8));
+
+/** PBKDF2-SHA256(name, 'noisewords/v1', 200k) → a valid secp256k1 secret (64 hex). Rejects on an empty name or without WebCrypto. */
+async function deriveSecret(name) {
+  const norm = normalizeName(name);
+  if (!norm) throw new Error('pattern: empty name');
+  const subtle = globalThis.crypto && globalThis.crypto.subtle;
+  if (!subtle) throw new Error('pattern: WebCrypto unavailable');
+  const enc = new TextEncoder();
+  const key = await subtle.importKey('raw', enc.encode(norm), 'PBKDF2', false, ['deriveBits']);
+  let bits = new Uint8Array(await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode('noisewords/v1'), iterations: 200000 }, key, 256));
+  // a secret must be in 1..n−1; the odds of missing are ~2^-128, and a miss re-hashes until it lands
+  while (big(bits) === 0n || big(bits) >= N) bits = new Uint8Array(await subtle.digest('SHA-256', bits));
+  return hex(bits);
+}
+
+// ---- colour ---------------------------------------------------------------------------------------
+/** OKLCH → sRGB hex (Ottosson's OKLab matrices), each channel clamped. Display only, so transcendental Math is fine here. */
+function oklchToHex(L, C, hDeg) {
+  const hr = (hDeg * Math.PI) / 180, A = C * Math.cos(hr), B = C * Math.sin(hr);
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+  const lin = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+  return '#' + lin.map((x) => {
+    x = Number.isFinite(x) ? Math.min(1, Math.max(0, x)) : 0;
+    const g = x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055;
+    return Math.round(Math.min(1, Math.max(0, g)) * 255).toString(16).padStart(2, '0');
+  }).join('');
+}
+
+// Hue A skips 0 (rose: now and here) and 90 (butter: the words most people found); hue B sits ≥ 90° away from A and is never butter.
+// A at L .85 and B at L .79 keep dark ink ≥ 8:1 on both and the motif readable without hue.
+const H1 = [30, 60, 120, 150, 180, 210, 240, 270, 300, 330];
+const arc = (x, y) => { const d = Math.abs(x - y) % 360; return Math.min(d, 360 - d); };
+const H2 = new Map(H1.map((h1) => [h1, Array.from({ length: 12 }, (_, k) => k * 30).filter((h) => h !== 90 && arc(h, h1) >= 90)]));
+
+// ---- tiles ----------------------------------------------------------------------------------------
+// Six motifs in hue A over a hue-B ground, all readable in a 5 px ribbon. CSS use: background: var(--pat) 0 0 / 6px 6px.
+const TYPES = ['diag', 'anti', 'bars', 'dots', 'checks', 'chevron'];
+const MOTIF = {
+  diag: (A) => `<path d="M-1 1L1-1M0 6L6 0M5 7L7 5" stroke="${A}" stroke-width="2.1"/>`,
+  anti: (A) => `<path d="M-1 5L1 7M0 0L6 6M5-1L7 1" stroke="${A}" stroke-width="2.1"/>`,
+  bars: (A) => `<rect width="3" height="6" fill="${A}"/>`,
+  dots: (A) => `<circle cx="3" cy="3" r="1.7" fill="${A}"/>`,
+  checks: (A) => `<rect width="3" height="3" fill="${A}"/><rect x="3" y="3" width="3" height="3" fill="${A}"/>`,
+  chevron: (A) => `<path d="M0 4.5L3 1.5L6 4.5" fill="none" stroke="${A}" stroke-width="1.8"/>`,
+};
+// width/height give the image an intrinsic size (canvas patterns need one); z > 6 rasterises the same tile sharper
+const tileSvg = (type, a, b, z = 6) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${z}" height="${z}" viewBox="0 0 6 6"><rect width="6" height="6" fill="${b}"/>${MOTIF[type](a)}</svg>`;
+
+// ---- pattern of a pubkey --------------------------------------------------------------------------
+const PK = /^[0-9a-f]{64}$/;
+const pats = new Map();
+/** Pure and cached. Only validated lowercase hex is accepted, so nothing from the network can reach a class name or CSS. */
+function patternOf(pk) {
+  let p = pats.get(pk);
+  if (p) return p;
+  if (typeof pk !== 'string' || !PK.test(pk)) throw new TypeError('pattern: pubkey must be 64 lowercase hex');
+  const byte = (i) => parseInt(pk.slice(2 * i, 2 * i + 2), 16);
+  const h1 = H1[byte(0) % 10], cand = H2.get(h1), h2 = cand[byte(1) % cand.length];
+  const type = TYPES[byte(2) % 6], dots = (byte(3) % 15) + 1;   // dot bits: 1 N, 2 E, 4 S, 8 W
+  const a = oklchToHex(0.85, 0.09, h1), b = oklchToHex(0.79, 0.09, h2);
+  const tile = tileSvg(type, a, b);
+  p = Object.freeze({ pk, cls: 'p-' + pk.slice(0, 16), h1, h2, type, dots, a, b, tile, url: 'url("data:image/svg+xml,' + encodeURIComponent(tile) + '")' });
+  if (pats.size >= 2048) pats.delete(pats.keys().next().value);
+  pats.set(pk, p);
+  return p;
+}
+
+// ---- DOM: one class rule per pubkey, and beads --------------------------------------------------
+// Zero-specificity defaults for beads, so a bead draws even without page CSS; any .pbead rule in page.html wins over them.
+const BASE = [
+  ':where(.pbead){display:inline-block;position:relative;flex:none;vertical-align:middle;border-radius:50%;background:var(--pat) 0 0/6px 6px}',
+  ':where(.pbead>.fd){position:absolute;width:var(--fd);height:var(--fd);border-radius:50%;background:var(--dusk-deep,#1e1c27)}',
+  ':where(.pbead>.fd-n){top:var(--fi);left:calc(50% - var(--fd)/2)}',
+  ':where(.pbead>.fd-s){bottom:var(--fi);left:calc(50% - var(--fd)/2)}',
+  ':where(.pbead>.fd-e){right:var(--fi);top:calc(50% - var(--fd)/2)}',
+  ':where(.pbead>.fd-w){left:var(--fi);top:calc(50% - var(--fd)/2)}',
+];
+let styleEl = null;
+const inserted = new Set();   // classes with a rule in the current <style id="nw-pats">
+const hasDom = () => { const d = globalThis.document; return d && typeof d.createElement === 'function' ? d : null; };
+function addRule(rule) {
+  const sh = styleEl.sheet;
+  if (sh) try { sh.insertRule(rule, sh.cssRules.length); return; } catch {}
+  styleEl.appendChild(styleEl.ownerDocument.createTextNode(rule + '\n'));
+}
+/** The pattern's class; with a document, its `.p-…{--pat;--pa;--pb}` rule is added once to <style id="nw-pats">. */
+function ensure(pk) {
+  const p = patternOf(pk), doc = hasDom();
+  if (!doc) return p.cls;
+  if (!styleEl || styleEl.isConnected === false) {
+    styleEl = doc.getElementById('nw-pats');
+    if (!styleEl) {
+      styleEl = doc.createElement('style');
+      styleEl.setAttribute('id', 'nw-pats');
+      (doc.head || doc.documentElement).appendChild(styleEl);
+    }
+    inserted.clear();
+    BASE.forEach(addRule);
+  }
+  if (!inserted.has(p.cls)) {
+    inserted.add(p.cls);
+    addRule(`.${p.cls}{--pat:${p.url};--pa:${p.a};--pb:${p.b}}`);
+  }
+  return p.cls;
+}
+
+// dot classes are fd-n … fd-w, not the bare n|e|s|w of the spec sketch: a bare .w would collide with the markable-word class
+const DIRS = [[1, 'n'], [2, 'e'], [4, 's'], [8, 'w']];
+const r2 = (x) => Math.round(x * 100) / 100;
+/** A round bead in the pattern with its fingerprint dots, decorative (aria-hidden). null without a document. */
+function bead(pk, size = 26) {
+  const doc = hasDom();
+  if (!doc) return null;
+  const p = patternOf(pk), z = Number(size) > 0 ? Number(size) : 26;
+  const el = doc.createElement('span');
+  el.setAttribute('class', 'pbead ' + ensure(pk));
+  el.setAttribute('style', `width:${z}px;height:${z}px;--fd:${r2(Math.max(2, z * 0.12))}px;--fi:${r2(z * 0.14)}px`);
+  el.setAttribute('aria-hidden', 'true');
+  for (const [bit, d] of DIRS) {
+    if (!(p.dots & bit)) continue;
+    const i = doc.createElement('i');
+    i.setAttribute('class', 'fd fd-' + d);
+    el.appendChild(i);
+  }
+  return el;
+}
+
+// ---- canvas (the sky coil) ------------------------------------------------------------------------
+const imgs = new Map();   // scale|pk → Promise<Image|null>
+const loadImage = (src) => new Promise((res) => {
+  const im = new Image();
+  im.onload = () => res(im);
+  im.onerror = () => res(null);
+  im.src = src;
+});
+/** A repeating pattern of the tile, 6 user units per tile. Rasterised at the context's current scale (≤ 4) so it stays sharp
+ *  on dense screens. Resolves null (never rejects) without a canvas, Image, or if the tile fails to load. */
+async function canvasPattern(ctx, pk) {
+  const p = patternOf(pk);
+  if (!ctx || typeof ctx.createPattern !== 'function' || typeof globalThis.Image !== 'function') return null;
+  const t = typeof ctx.getTransform === 'function' ? ctx.getTransform() : null;
+  const sharp = t && typeof globalThis.DOMMatrix === 'function' && globalThis.CanvasPattern && typeof globalThis.CanvasPattern.prototype.setTransform === 'function';
+  const k = sharp ? Math.min(4, Math.max(1, Math.ceil(Math.hypot(t.a, t.b) - 0.01))) : 1;
+  const key = k + '|' + pk;
+  if (!imgs.has(key)) imgs.set(key, loadImage('data:image/svg+xml,' + encodeURIComponent(k === 1 ? p.tile : tileSvg(p.type, p.a, p.b, 6 * k))));
+  const im = await imgs.get(key);
+  if (!im) { imgs.delete(key); return null; }
+  const pat = ctx.createPattern(im, 'repeat');
+  if (pat && k > 1) pat.setTransform(new globalThis.DOMMatrix([1 / k, 0, 0, 1 / k, 0, 0]));
+  return pat;
+}
+
+NW.pattern = Object.freeze({ normalizeName, deriveSecret, patternOf, ensure, bead, canvasPattern, oklchToHex });
+})();
+
+// ---- dev/mock-net.js
+// Offline stand-in for the network (?mock). Two tabs of one origin can be two players, or one player on
+// two "devices" (&dev=1 / &dev=2 make net.js namespace IndexedDB and localStorage). It has the transport
+// adapter's exact shape, so net.js runs its real code paths against it:
+//   relays  mock://a and mock://b: one shared localStorage table (nwmock.events) with replaceable
+//           semantics (the newer rule), plus BroadcastChannel('nwmock') for live events;
+//   mesh    BroadcastChannel('nwmock-mesh') with targeted messages; it runs net's real handshake
+//           callback and only delivers actions from peers whose handshake passed, like Trystero;
+//   crypto  pk = sha256('mockpk:'+sk), the real NIP-01 id, sig = sha256(id+pk) + sha256(pk+id).
+// Knobs from the console: NW.mock.set({offline, rateLimit /*per relay per min*/, dropRate, latencyMs, peerCap}).
+// Inert until net.js calls into it (only with ?mock), so it ships in the built page.
+(() => {
+'use strict';
+const NW = (globalThis.NW = globalThis.NW || {});
+
+const knobs = { offline: false, rateLimit: 0, dropRate: 0, latencyMs: 30, peerCap: 20 };
+const URLS = Object.freeze(['mock://a', 'mock://b']);
+const TABLE = 'nwmock.events';
+const HB = 4000, HB_DEAD = 12000, HS_TIMEOUT = 10000;
+
+const bg = (t) => { if (t && typeof t.unref === 'function') t.unref(); return t; };
+const after = (fn) => bg(setTimeout(fn, Math.max(0, knobs.latencyMs)));
+const dropped = () => knobs.dropRate > 0 && Math.random() < knobs.dropRate;
+const ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const selfId = Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => ALPHA[b % 36]).join('');
+const newer = (a, b) => a.created_at > b.created_at || (a.created_at === b.created_at && a.id < b.id);
+const clean = (ev) => ({ kind: ev.kind, created_at: ev.created_at, tags: ev.tags, content: ev.content, pubkey: ev.pubkey, id: ev.id, sig: ev.sig });
+const chan = (name) => { if (typeof BroadcastChannel !== 'function') return null; const c = new BroadcastChannel(name); if (typeof c.unref === 'function') c.unref(); return c; };
+
+// ---- crypto ----------------------------------------------------------------------------------------
+const enc = new TextEncoder();
+const sha256hex = async (s) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(s))), (b) => b.toString(16).padStart(2, '0')).join('');
+const idOf = (ev) => sha256hex(JSON.stringify([0, ev.pubkey, ev.created_at, ev.kind, ev.tags, ev.content]));
+const sigOf = async (id, pk) => (await sha256hex(id + pk)) + (await sha256hex(pk + id));
+const getPublicKey = (sk) => sha256hex('mockpk:' + sk);
+async function finalize(t, sk) {
+  const ev = { kind: t.kind, created_at: t.created_at, tags: t.tags, content: t.content, pubkey: await getPublicKey(sk) };
+  ev.id = await idOf(ev);
+  ev.sig = await sigOf(ev.id, ev.pubkey);
+  return ev;
+}
+async function verify(ev) {
+  try { return (await idOf(ev)) === ev.id && (await sigOf(ev.id, ev.pubkey)) === ev.sig; } catch { return false; }
+}
+
+// ---- relays --------------------------------------------------------------------------------------------
+// table: {url: {key: event}}; kind 30078 is keyed by (pubkey, d), anything else by id
+const memTable = {};
+const ls = () => { try { return globalThis.localStorage || null; } catch { return null; } };
+function load() {
+  const s = ls();
+  if (!s) return memTable;
+  try { const t = JSON.parse(s.getItem(TABLE) || '{}'); return t && typeof t === 'object' ? t : {}; } catch { return {}; }
+}
+function save(t) { const s = ls(); if (s) try { s.setItem(TABLE, JSON.stringify(t)); } catch {} }
+const keyOf = (ev) => (ev.kind >= 30000 && ev.kind < 40000 ? ev.kind + ':' + ev.pubkey + ':' + ((ev.tags.find((x) => x[0] === 'd') || [])[1] || '') : ev.id);
+
+const seen = new Map();             // id -> Set<url>, like pool.seenOn
+const markSeen = (id, url) => { let s = seen.get(id); if (!s) seen.set(id, (s = new Set())); s.add(url); };
+const pubLog = new Map();           // url -> [ms], this tab's publishes (the rate limit is per client)
+const subs = new Set();
+let relayCh = null;
+function relayBus() {
+  if (!relayCh && (relayCh = chan('nwmock'))) relayCh.onmessage = (e) => { if (!knobs.offline) deliver(e.data.ev, e.data.urls); };
+  return relayCh;
+}
+function matches(f, ev) {
+  if (f.kinds && !f.kinds.includes(ev.kind)) return false;
+  if (f.authors && !f.authors.includes(ev.pubkey)) return false;
+  if (f.ids && !f.ids.includes(ev.id)) return false;
+  for (const k of Object.keys(f)) {
+    if (k[0] !== '#') continue;
+    const name = k.slice(1);
+    if (!ev.tags.some((t) => t[0] === name && f[k].includes(t[1]))) return false;
+  }
+  return true;
+}
+function deliver(ev, urls) {
+  for (const s of subs) {
+    const on = urls.filter((u) => s.urls.includes(u));
+    if (!on.length || !matches(s.filter, ev)) continue;
+    on.forEach((u) => markSeen(ev.id, u));
+    if (s.ids.has(ev.id)) continue;
+    s.ids.add(ev.id);
+    try { s.h.onevent && s.h.onevent(clean(ev)); } catch (e) { console.error(e); }
+  }
+}
+function subscribe(filter, h, only) {
+  const s = { filter, h, urls: (only || URLS).filter((u) => URLS.includes(u)), ids: new Set() };
+  subs.add(s);
+  relayBus();
+  after(() => {
+    if (!subs.has(s)) return;
+    if (!knobs.offline) {
+      const t = load(), evs = [];
+      for (const u of s.urls) for (const ev of Object.values(t[u] || {})) if (matches(filter, ev)) { markSeen(ev.id, u); evs.push(ev); }
+      evs.sort((a, b) => b.created_at - a.created_at);
+      for (const ev of evs.slice(0, filter.limit || 500)) {
+        if (s.ids.has(ev.id)) continue;
+        s.ids.add(ev.id);
+        try { h.onevent && h.onevent(clean(ev)); } catch (e) { console.error(e); }
+      }
+    }
+    try { h.oneose && h.oneose(); } catch (e) { console.error(e); }
+  });
+  return { close() { subs.delete(s); } };
+}
+function publish(ev, only) {
+  const urls = only || URLS;
+  return new Promise((res) => after(async () => {
+    const ok = await verify(ev);
+    const out = [], fresh = [];
+    let t = null;
+    const now = Date.now();
+    for (const url of urls) {
+      if (!URLS.includes(url)) { out.push({ url, ok: false, reason: 'error: unknown relay' }); continue; }
+      if (knobs.offline) { out.push({ url, ok: false, reason: 'error: offline' }); continue; }
+      if (dropped()) { out.push({ url, ok: false, reason: 'error: publish timed out' }); continue; }
+      const log = (pubLog.get(url) || []).filter((x) => now - x < 60000);
+      pubLog.set(url, log);
+      if (knobs.rateLimit > 0 && log.length >= knobs.rateLimit) { out.push({ url, ok: false, reason: 'rate-limited: slow down' }); continue; }
+      log.push(now);
+      if (!ok) { out.push({ url, ok: false, reason: 'invalid: bad signature' }); continue; }
+      t = t || load();
+      const tab = t[url] || (t[url] = {});
+      const k = keyOf(ev), cur = tab[k];
+      markSeen(ev.id, url);
+      if (cur && cur.id === ev.id) { out.push({ url, ok: true, reason: 'duplicate: already have this event' }); continue; }
+      if (cur && !newer(ev, cur)) { out.push({ url, ok: true, reason: 'duplicate: have a newer version' }); continue; }
+      tab[k] = clean(ev);
+      out.push({ url, ok: true, reason: '' });
+      fresh.push(url);
+    }
+    if (t) save(t);
+    if (fresh.length) {
+      deliver(ev, fresh);   // real relays echo to the publisher's own subscriptions too
+      const bus = relayBus();
+      if (bus) bus.postMessage({ ev: clean(ev), urls: fresh });
+    }
+    res(out);
+  }));
+}
+const relays = Object.freeze({
+  urls: URLS,
+  subscribe,
+  publish,
+  seenOn: (id) => new Set(seen.get(id) || []),
+  connected: () => (knobs.offline ? new Set() : new Set(URLS)),
+});
+
+// ---- mesh ---------------------------------------------------------------------------------------------
+const rooms = new Set();
+let meshCh = null;
+function meshBus() {
+  if (!meshCh && (meshCh = chan('nwmock-mesh'))) meshCh.onmessage = (e) => { if (!knobs.offline) rooms.forEach((r) => r.recv(e.data)); };
+  return meshCh;
+}
+const post = (msg) => { if (knobs.offline) return; const bus = meshBus(); if (bus) after(() => { if (!knobs.offline) bus.postMessage(msg); }); };
+
+function joinRoom(config, roomId, cb = {}) {
+  const ns = config.appId + '/' + roomId;          // the password is moot: every mock page knows it
+  const peers = new Map();                         // id -> {active, localOk, remoteReady, queue, waiters, timer, seen, dead}
+  const actions = new Map();
+  let left = false;
+  const send = (msg) => post({ ns, from: selfId, ...msg });
+
+  function addPeer(id) {
+    const p = { active: false, localOk: false, remoteReady: false, queue: [], waiters: [], timer: null, seen: Date.now(), dead: false };
+    peers.set(id, p);
+    p.timer = bg(setTimeout(() => fail(id, `handshake timed out after ${HS_TIMEOUT}ms`), HS_TIMEOUT));
+    const hsSend = async (data) => { send({ t: 'hs', to: id, json: JSON.stringify(data) }); };
+    const hsReceive = () => new Promise((resolve, reject) => {
+      if (p.dead) return reject(new Error('peer disconnected during handshake'));
+      if (p.queue.length) return resolve(p.queue.shift());
+      p.waiters.push({ resolve, reject });
+    });
+    Promise.resolve(cb.onPeerHandshake ? cb.onPeerHandshake(id, hsSend, hsReceive, selfId < id) : undefined).then(() => {
+      if (p.dead || peers.get(id) !== p) return;
+      p.localOk = true;
+      send({ t: 'ready', to: id });
+      activate(id, p);
+    }, (err) => fail(id, (err && err.message) || 'handshake failed'));
+  }
+  function activate(id, p) {
+    if (!p.localOk || !p.remoteReady || p.active || p.dead) return;
+    p.active = true;
+    clearTimeout(p.timer);
+    try { room.onPeerJoin && room.onPeerJoin(id); } catch (e) { console.error(e); }
+  }
+  function fail(id, why) {
+    const p = peers.get(id);
+    if (!p || p.active) return;
+    drop(id, true);
+    try { cb.onJoinError && cb.onJoinError({ error: why, appId: config.appId, roomId, peerId: id }); } catch {}
+  }
+  function drop(id, tell) {
+    const p = peers.get(id);
+    if (!p) return;
+    peers.delete(id);
+    p.dead = true;
+    clearTimeout(p.timer);
+    p.waiters.splice(0).forEach((w) => w.reject(new Error('peer disconnected during handshake')));
+    if (tell) send({ t: 'bye', to: id });
+    if (p.active) { try { room.onPeerLeave && room.onPeerLeave(id); } catch (e) { console.error(e); } }
+  }
+  function recv(m) {
+    if (left || !m || m.ns !== ns || m.from === selfId || (m.to && m.to !== selfId)) return;
+    const id = m.from;
+    let p = peers.get(id);
+    if (p) p.seen = Date.now();
+    if (m.t === 'join') {
+      if (p && !m.to) { drop(id, false); p = null; }     // they rejoined: start over
+      if (!p && peers.size < knobs.peerCap - 1) addPeer(id);
+      if (!m.to) send({ t: 'join', to: id });
+      return;
+    }
+    if (!p) return;
+    if (m.t === 'hs') {
+      if (p.active) return;
+      let data = null;
+      try { data = JSON.parse(m.json); } catch {}
+      const w = p.waiters.shift();
+      if (w) w.resolve({ data }); else p.queue.push({ data });
+    } else if (m.t === 'ready') {
+      p.remoteReady = true;
+      activate(id, p);
+    } else if (m.t === 'act') {
+      const a = actions.get(m.name);
+      if (!p.active || !a || dropped()) return;
+      let data;
+      try { data = JSON.parse(m.json); } catch { return; }
+      try { if (a.onMessage) a.onMessage(data, { peerId: id }); } catch (e) { console.error(e); }
+    } else if (m.t === 'bye') drop(id, false);
+  }
+  function goOffline() { [...peers.keys()].forEach((id) => drop(id, false)); }
+  function goOnline() { send({ t: 'join' }); }
+
+  const beat = bg(setInterval(() => {
+    if (left || knobs.offline) return;
+    send({ t: 'beat' });
+    const now = Date.now();
+    for (const [id, p] of peers) if (now - p.seen > HB_DEAD) drop(id, false);
+  }, HB));
+
+  const room = {
+    onPeerJoin: null,
+    onPeerLeave: null,
+    makeAction(name) {
+      const a = {
+        onMessage: null,
+        onReceiveProgress: null,
+        send(data, o) {
+          const target = o && o.target;
+          const ids = target == null ? [...peers.keys()] : [].concat(target);
+          const json = JSON.stringify(data);
+          for (const id of ids) { const p = peers.get(id); if (p && p.active) send({ t: 'act', to: id, name, json }); }
+          return Promise.resolve();
+        },
+      };
+      actions.set(name, a);
+      return a;
+    },
+    getPeers() {
+      const o = {};
+      for (const [id, p] of peers) if (p.active) o[id] = { close: () => drop(id, true) };
+      return o;
+    },
+    ping: async () => knobs.latencyMs * 2,
+    isPassive: () => false,
+    leave() {
+      if (!left) {
+        left = true;
+        clearInterval(beat);
+        send({ t: 'bye' });
+        for (const id of [...peers.keys()]) { const p = peers.get(id); p.active = false; drop(id, false); }
+        rooms.delete(handle);
+      }
+      return Promise.resolve();
+    },
+  };
+  const handle = { recv, goOffline, goOnline };
+  rooms.add(handle);
+  meshBus();
+  send({ t: 'join' });
+  return room;
+}
+
+// ---- knobs ---------------------------------------------------------------------------------------------
+function fire(type) {
+  try { if (typeof globalThis.dispatchEvent === 'function' && typeof Event === 'function') globalThis.dispatchEvent(new Event(type)); } catch {}
+}
+function set(k = {}) {
+  const wasOffline = knobs.offline;
+  if ('offline' in k) knobs.offline = !!k.offline;
+  if ('rateLimit' in k) knobs.rateLimit = Math.max(0, Number(k.rateLimit) || 0);
+  if ('dropRate' in k) knobs.dropRate = Math.min(1, Math.max(0, Number(k.dropRate) || 0));
+  if ('latencyMs' in k) knobs.latencyMs = Math.max(0, Number(k.latencyMs) || 0);
+  if ('peerCap' in k) knobs.peerCap = Math.max(1, Number(k.peerCap) || 20);
+  if (knobs.offline && !wasOffline) { rooms.forEach((r) => r.goOffline()); fire('offline'); }
+  if (!knobs.offline && wasOffline) { rooms.forEach((r) => r.goOnline()); fire('online'); }   // net.js reopens on 'online'
+  return { ...knobs };
+}
+
+NW.mock = Object.freeze({
+  selfId,
+  crypto: Object.freeze({ getPublicKey, finalize, verify }),
+  relays,
+  joinRoom,
+  set,
+  knobs: () => ({ ...knobs }),
+  /** Empties the shared relay table (every mock tab of this origin). */
+  reset() { const s = ls(); if (s) try { s.removeItem(TABLE); } catch {} for (const k of Object.keys(memTable)) delete memTable[k]; },
+});
+})();
+
+// ---- src/net.js
+// Noise Words networking: the shared constants (NW.C), the pure sheet model (NW.sheet) and the one
+// object the page talks to (NW.net). There is no server of ours. Each player's day is one signed,
+// replaceable Nostr event (kind 30078) on public relays; a Trystero mesh carries the same events live
+// between open pages; IndexedDB keeps a local replica, so reading works offline.
+// Classic script: nothing here touches the DOM, window, location or indexedDB until start() runs,
+// so node can load it in a vm for tests.
+(() => {
+'use strict';
+const NW = (globalThis.NW = globalThis.NW || {});
+
+// ---- constants -------------------------------------------------------------------------------------
+const C = Object.freeze({
+  K: 7,                              // marks per player per day
+  TAG_PREFIX: 'noisewords/1/',       // dayTag = TAG_PREFIX + 'YYYY-MM-DD'
+  KIND: 30078, HELLO_KIND: 20078,
+  MAX_CONTENT: 4096,                 // chars of the content string
+  DRAW_OTHERS: 40,                   // other sheets drawn per day
+  STORE_PER_TAG: 500,                // sheets kept per tag (first-seen)
+  MESH_CAP: 20,                      // peers incl. self
+  KEEP_DAYS: 60,                     // others' sheets retention; own kept forever
+  // verified 2026-10-16: publish OK, #d read-back, replaceable semantics (relay.damus.io rejects kind 30078)
+  RELAYS: Object.freeze(['wss://nos.lol', 'wss://relay.primal.net', 'wss://nostr.mom', 'wss://relay.snort.social', 'wss://offchain.pub', 'wss://relay.nostr.net']),
+  APP_ID: 'noisewords-v1', ROOM: 'commons', ROOM_PASSWORD: 'noisewords/commons',
+  NOSTR_TOOLS: 'https://cdn.jsdelivr.net/npm/nostr-tools@2.25.2/+esm',
+  TRYSTERO: 'https://cdn.jsdelivr.net/npm/@trystero-p2p/nostr@0.25.4/+esm',
+});
+NW.C = C;
+
+// ---- sheet model (pure) ----------------------------------------------------------------------------
+// A sheet is {h, r, e}: the page hash, the reveal counter (0 = veiled) and e = Map<idx, {c, on}>, one
+// Lamport-stamped entry per marked word occurrence. Everything below is pure so node can test it.
+const HEX64 = /^[0-9a-f]{64}$/, HEX128 = /^[0-9a-f]{128}$/, HEX8 = /^[0-9a-f]{8}$/, HEX16 = /^[0-9a-f]{16}$/;
+const TAG_RE = /^noisewords\/1\/(\d{4}-\d{2}-\d{2})$/;
+const WKEY = /^w(0|[1-9]\d{0,2})$/;    // the canonical spelling only: 'w012' would alias 'w12'
+const MAXC = 2147483647;
+const isInt = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
+const plainObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const text = () => NW.text;
+const isDate = (s) => !!text() && text().isDate(s);
+
+const dayTag = (date) => C.TAG_PREFIX + date;
+const dateOfTag = (tag) => { const m = typeof tag === 'string' ? TAG_RE.exec(tag) : null; return m && isDate(m[1]) ? m[1] : null; };
+
+/** [[idx, {c, on}], ...] sorted by idx, from a Map of this or another realm (duck-typed) or a plain {idx: entry} object. */
+function entriesOf(e) {
+  const out = [];
+  if (!e) return out;
+  if (typeof e.forEach === 'function' && typeof e.get === 'function') e.forEach((v, k) => out.push([+k, v]));
+  else for (const k of Object.keys(e)) out.push([+k, e[k]]);
+  return out.sort((a, b) => a[0] - b[0]);
+}
+const onCount = (e) => entriesOf(e).reduce((n, [, v]) => n + (v.on ? 1 : 0), 0);
+
+/** Key order exactly v, h, r, e; e keys by numeric index; no spaces. */
+function canonical({ h, r, e }) {
+  const parts = entriesOf(e).map(([i, v]) => `"w${i}":[${v.c},${v.on ? 1 : 0}]`);
+  return `{"v":1,"h":${JSON.stringify(String(h))},"r":${r || 0},"e":{${parts.join(',')}}}`;
+}
+
+/** page: NW.text.page(date), or null for syntax-only. hashOk only when h matches the page; then indices,
+ *  markability and the K cap are checked too. Network keys are copied into a Map, never onto {}. */
+function parseContent(str, page) {
+  if (typeof str !== 'string' || str.length > C.MAX_CONTENT) return { error: 'content' };
+  let o;
+  try { o = JSON.parse(str); } catch { return { error: 'json' }; }
+  if (!plainObj(o)) return { error: 'json' };
+  if (o.v !== 1) return { error: 'v' };
+  if (typeof o.h !== 'string' || !HEX8.test(o.h)) return { error: 'h' };
+  if (!isInt(o.r, 0, MAXC)) return { error: 'r' };
+  if (!plainObj(o.e)) return { error: 'e' };
+  const keys = Object.keys(o.e);
+  if (keys.length > 200) return { error: 'e' };
+  const hashOk = !!page && o.h === page.hash;
+  const e = new Map();
+  let on = 0;
+  for (const k of keys) {
+    if (k === '__proto__') return { error: 'proto' };   // hostile on purpose; nothing legitimate is named so
+    if (k[0] !== 'w') continue;                          // other prefixes (v2 stamps 's12') are ignored
+    const m = WKEY.exec(k), v = o.e[k];
+    if (!m || !Array.isArray(v) || v.length !== 2 || !isInt(v[0], 1, MAXC) || (v[1] !== 0 && v[1] !== 1)) return { error: 'w' };
+    const idx = +m[1];
+    if (hashOk && !(idx < page.count && page.tokens[idx].mk)) return { error: 'idx' };
+    e.set(idx, { c: v[0], on: v[1] });
+    on += v[1];
+  }
+  if (hashOk && on > C.K) return { error: 'k' };
+  return { h: o.h, r: o.r, e, hashOk };
+}
+
+// equal counters: off wins
+const mergeEntry = (a, b) => (!a ? b : !b ? a : a.c !== b.c ? (a.c > b.c ? a : b) : (a.on <= b.on ? a : b));
+
+/** Over K on-entries: keep the K lowest (c, idx); the rest become [c, 0]. Returns a new Map. */
+function trim(e) {
+  const out = new Map(entriesOf(e).map(([i, v]) => [i, { c: v.c, on: v.on ? 1 : 0 }]));
+  const ons = [...out].filter(([, v]) => v.on).sort((a, b) => a[1].c - b[1].c || a[0] - b[0]);
+  for (const [i, v] of ons.slice(C.K)) out.set(i, { c: v.c, on: 0 });
+  return out;
+}
+
+/** Per-entry LWW over the union, the earliest non-zero reveal, then the K trim. */
+function mergeSheet(x, y) {
+  const e = new Map();
+  for (const [i, v] of entriesOf(x && x.e)) e.set(i, v);
+  for (const [i, v] of entriesOf(y && y.e)) e.set(i, mergeEntry(e.get(i), v));
+  const xr = (x && x.r) || 0, yr = (y && y.r) || 0;
+  return { r: xr && yr ? Math.min(xr, yr) : xr || yr, e: trim(e) };
+}
+
+const newer = (a, b) => a.created_at > b.created_at || (a.created_at === b.created_at && a.id < b.id);
+const blind = (en, r) => !!(en && en.on && (!r || en.c < r));
+
+/** §5.6 steps 1–3 and 6. ctx: {nowSec, today}. */
+function validate(ev, ctx = {}) {
+  const no = (reason) => ({ ok: false, reason });
+  const T = text();
+  const nowS = Number.isFinite(ctx.nowSec) ? ctx.nowSec : Math.floor(Date.now() / 1000);
+  const today = ctx.today || T.dayKey(nowS * 1000);
+  if (!plainObj(ev) || ev.kind !== C.KIND) return no('kind');
+  if (typeof ev.id !== 'string' || !HEX64.test(ev.id) || typeof ev.pubkey !== 'string' || !HEX64.test(ev.pubkey)) return no('hex');
+  if (typeof ev.sig !== 'string' || !HEX128.test(ev.sig)) return no('sig');
+  if (!Number.isInteger(ev.created_at)) return no('created_at');
+  if (!Array.isArray(ev.tags) || ev.tags.length < 1 || ev.tags.length > 4
+    || !ev.tags.every((t) => Array.isArray(t) && t.every((s) => typeof s === 'string' && s.length <= 128))) return no('tags');
+  if (typeof ev.content !== 'string' || ev.content.length > C.MAX_CONTENT) return no('content');
+  const ds = ev.tags.filter((t) => t[0] === 'd');
+  if (ds.length !== 1) return no('d');
+  const m = typeof ds[0][1] === 'string' ? TAG_RE.exec(ds[0][1]) : null;
+  const date = m && m[1];
+  if (!date || !isDate(date) || date < T.FIRST_DAY || date > T.addDays(today, 1)) return no('date');
+  if (ev.created_at > nowS + 3600) return no('future');
+  const [y, mo, d] = date.split('-').map(Number);
+  if (ev.created_at < Date.UTC(y, mo - 1, d) / 1000 - 14 * 3600) return no('early');
+  const sheet = parseContent(ev.content, T.page(date));
+  if (sheet.error) return no(sheet.error);
+  return { ok: true, date, sheet };
+}
+
+NW.sheet = Object.freeze({ K: C.K, dayTag, dateOfTag, canonical, parseContent, mergeEntry, mergeSheet, trim, newer, blind, validate });
+
+// ---- small helpers ---------------------------------------------------------------------------------
+// Long timers don't hold a node process open (tests); in browsers this is a no-op.
+const bg = (t) => { if (t && typeof t.unref === 'function') t.unref(); return t; };
+const later = (fn, ms) => bg(setTimeout(fn, ms));
+const sleep = (ms) => new Promise((res) => later(res, ms));
+const randomHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
+const hexBytes = (hex) => Uint8Array.from(hex.match(/../g), (b) => parseInt(b, 16));
+const normUrl = (u) => String(u).replace(/\/+$/, '');
+const cleanEv = (ev) => ({ kind: ev.kind, created_at: ev.created_at, tags: ev.tags.map((t) => t.slice()), content: ev.content, pubkey: ev.pubkey, id: ev.id, sig: ev.sig });
+const visible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
+const listen = (type, fn, target = globalThis) => { if (target && typeof target.addEventListener === 'function') target.addEventListener(type, fn); };
+
+// localStorage, prefixed (nw. or nwm<dev>. in mock mode), every access wrapped; a Map stands in when it throws
+let lsPrefix = 'nw.';
+const lsMem = new Map();
+function lsGet(k) {
+  try { if (globalThis.localStorage) return globalThis.localStorage.getItem(lsPrefix + k); } catch {}
+  return lsMem.has(lsPrefix + k) ? lsMem.get(lsPrefix + k) : null;
+}
+function lsSet(k, v) {
+  try { if (globalThis.localStorage) { if (v == null) globalThis.localStorage.removeItem(lsPrefix + k); else globalThis.localStorage.setItem(lsPrefix + k, v); return; } } catch {}
+  if (v == null) lsMem.delete(lsPrefix + k); else lsMem.set(lsPrefix + k, v);
+}
+function pref(k, v) {
+  if (arguments.length > 1) { lsSet(k, v === undefined ? null : JSON.stringify(v)); return v; }
+  try { const s = lsGet(k); return s == null ? null : JSON.parse(s); } catch { return null; }
+}
+
+// ---- storage: IndexedDB, or an in-memory stand-in ----------------------------------------------------
+const req = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+function idbStore(name) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open(name, 1);
+    open.onupgradeneeded = () => {
+      const d = open.result;
+      d.createObjectStore('sheets', { keyPath: ['pk', 'd'] }).createIndex('d', 'd');
+      d.createObjectStore('own', { keyPath: ['pk', 'd'] });
+    };
+    open.onerror = () => reject(open.error);
+    open.onblocked = () => reject(new Error('idb blocked'));
+    open.onsuccess = () => {
+      const db = open.result;
+      const os = (s, mode) => db.transaction(s, mode).objectStore(s);
+      resolve({
+        kind: 'idb',
+        allOwn: () => req(os('own').getAll()),
+        putOwn: (v) => req(os('own', 'readwrite').put(v)),
+        sheetsOf: (d) => req(os('sheets').index('d').getAll(d)),
+        getSheet: (pk, d) => req(os('sheets').get([pk, d])),
+        putSheet: (v) => req(os('sheets', 'readwrite').put(v)),
+        prune: (cut, keep) => new Promise((res, rej) => {
+          const c = os('sheets', 'readwrite').index('d').openCursor(IDBKeyRange.upperBound(cut, true));
+          c.onerror = () => rej(c.error);
+          c.onsuccess = () => {
+            const cur = c.result;
+            if (!cur) return res();
+            if (!keep.has(cur.value.pk)) cur.delete();
+            cur.continue();
+          };
+        }),
+      });
+    };
+  });
+}
+function memStore() {
+  const sheets = new Map(), own = new Map();
+  const k = (pk, d) => pk + '|' + d;
+  const copy = (v) => (typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v)));
+  return {
+    kind: 'memory',
+    allOwn: async () => [...own.values()].map(copy),
+    putOwn: async (v) => { own.set(k(v.pk, v.d), copy(v)); },
+    sheetsOf: async (d) => [...sheets.values()].filter((v) => v.d === d).map(copy),
+    getSheet: async (pk, d) => (sheets.has(k(pk, d)) ? copy(sheets.get(k(pk, d))) : undefined),
+    putSheet: async (v) => { sheets.set(k(v.pk, v.d), copy(v)); },
+    prune: async (cut, keep) => { for (const [key, v] of sheets) if (v.d < cut && !keep.has(v.pk)) sheets.delete(key); },
+  };
+}
+async function openStore(name, memory) {
+  if (memory || typeof indexedDB === 'undefined') return memStore();
+  try {
+    return await Promise.race([idbStore(name), sleep(4000).then(() => { throw new Error('idb timeout'); })]);
+  } catch (e) {
+    console.warn('noisewords: IndexedDB unavailable, keeping this session in memory', e);
+    return memStore();
+  }
+}
+
+// ---- the real transport adapter (nostr-tools + Trystero) ---------------------------------------------
+// The mock (dev/mock-net.js, NW.mock) has exactly this shape.
+function realAdapter(nt, ty) {
+  const pool = new nt.SimplePool({ enablePing: true });   // no enableReconnect: we reopen on our own triggers
+  pool.trackRelays = true;
+  const urls = C.RELAYS.slice();
+  const urlOf = (r) => normUrl(r && r.url ? r.url : r);
+  return {
+    selfId: ty.selfId,
+    crypto: {
+      getPublicKey: async (sk) => nt.getPublicKey(hexBytes(sk)),
+      finalize: async (t, sk) => nt.finalizeEvent({ kind: t.kind, created_at: t.created_at, tags: t.tags, content: t.content }, hexBytes(sk)),
+      verify: async (ev) => { try { return nt.verifyEvent(ev) === true; } catch { return false; } },
+    },
+    relays: {
+      urls,
+      subscribe(filter, h, only) {
+        return pool.subscribe(only || urls, filter, { onevent: h.onevent, oneose: h.oneose, maxWait: 6000 });
+      },
+      async publish(ev, to) {
+        const list = to || urls;
+        const res = await Promise.allSettled(pool.publish(list, ev));
+        return res.map((r, i) => ({ url: list[i], ok: r.status === 'fulfilled', reason: r.status === 'fulfilled' ? String(r.value || '') : String((r.reason && r.reason.message) || r.reason || '') }));
+      },
+      seenOn: (id) => new Set([...(pool.seenOn.get(id) || [])].map(urlOf)),
+      connected() {
+        const out = new Set();
+        try { pool.listConnectionStatus().forEach((up, u) => { if (up) out.add(normUrl(u)); }); } catch {}
+        return out;
+      },
+    },
+    joinRoom: ty.joinRoom,
+  };
+}
+async function loadLibs() {
+  try {
+    const [nt, ty] = await Promise.all([import(C.NOSTR_TOOLS), import(C.TRYSTERO)]);
+    return realAdapter(nt, ty);
+  } catch (e) {
+    console.warn('noisewords: network libraries unavailable, reading locally only', e);
+    return null;
+  }
+}
+
+// ---- runtime state -----------------------------------------------------------------------------------
+let opts = null, booting = null, booted = false;
+let T = null;                    // transport adapter, null = local only
+let ready = null;                // Promise<T|null>
+let db = memStore();             // replaced in start()
+let offset = 0, startedAt = 0, lastToday = null;
+let me = null, sk = null, viewed = null;
+const tags = new Map();          // date -> Map<pk, {pk, d, ev, seenAt, hashOk, sheet}>
+const tagLoads = new Map();      // date -> Promise<Map>
+const ownAll = new Map();        // pk -> Map<date, own record>
+const ownEv = new Map();         // date -> my newest signed event (for the outbox)
+const ownSeen = new Set();       // own event ids already merged this session
+const eose = new Set();          // dates whose subscription has reached EOSE this session
+const inflight = new Set();      // pending ingests (EOSE waits for them: the own merge runs first)
+const listeners = new Map();
+const stats = { signs: 0, publishes: 0, forwards: 0, ingested: 0, rejected: 0 };
+const timers = [];
+
+const nowMs = () => Date.now() + offset;
+const nowSec = () => Math.floor(nowMs() / 1000);
+const today = () => text().dayKey(nowMs());
+
+// ---- events ------------------------------------------------------------------------------------------
+function on(type, fn) {
+  let s = listeners.get(type);
+  if (!s) listeners.set(type, (s = new Set()));
+  s.add(fn);
+  return () => { s.delete(fn); };
+}
+function emit(type, detail) {
+  const s = listeners.get(type);
+  if (s) for (const fn of [...s]) { try { fn(detail); } catch (e) { console.error(e); } }
+}
+// network-driven day changes are coalesced (a relay replay is hundreds of events); local edits emit at once
+const dayQueue = new Set();
+let dayTimer = null;
+function emitDay(date, now) {
+  if (!date) return;
+  if (now) { dayQueue.delete(date); emit('day', { date }); return; }
+  dayQueue.add(date);
+  if (!dayTimer) dayTimer = setTimeout(() => {
+    dayTimer = null;
+    const ds = [...dayQueue];
+    dayQueue.clear();
+    ds.forEach((d) => emit('day', { date: d }));
+  }, 16);
+}
+let connLast = '';
+function connChanged() {
+  const c = conn();
+  const k = c.state + '|' + c.unsent;
+  if (k !== connLast) { connLast = k; emit('conn', c); }
+}
+
+// ---- own records -------------------------------------------------------------------------------------
+// {pk, d, e: Map<idx,{c,on}>, r, last: {id, created_at}|null, acked, dirty}; stored with e as [[idx,c,on]]
+function mineMap(pk = me) {
+  if (!pk) return null;
+  let m = ownAll.get(pk);
+  if (!m) ownAll.set(pk, (m = new Map()));
+  return m;
+}
+function ownRec(date, create, pk = me) {
+  const m = mineMap(pk);
+  if (!m) return null;
+  let o = m.get(date);
+  if (!o && create) m.set(date, (o = { pk, d: date, e: new Map(), r: 0, last: null, acked: true, dirty: false }));
+  return o || null;
+}
+const nextC = (o) => { let n = o.r; o.e.forEach((v) => { if (v.c > n) n = v.c; }); return n + 1; };
+function saveOwn(o) {
+  db.putOwn({ pk: o.pk, d: o.d, e: [...o.e].map(([i, v]) => [i, v.c, v.on]), r: o.r, last: o.last, acked: o.acked, dirty: o.dirty }).catch(() => {});
+}
+const ownContent = (o) => canonical({ h: text().page(o.d).hash, r: o.r, e: o.e });
+function countUnsent() {
+  let n = 0;
+  const m = me && ownAll.get(me);
+  if (m) m.forEach((o) => { if (o.dirty || !o.acked) n++; });
+  return n;
+}
+
+// ---- tags in memory --------------------------------------------------------------------------------
+function loadTag(date) {
+  if (!isDate(date)) return Promise.resolve(new Map());
+  let p = tagLoads.get(date);
+  if (p) return p;
+  if (!tags.has(date)) tags.set(date, new Map());
+  const map = tags.get(date);
+  p = db.sheetsOf(date).catch(() => []).then((rows) => {
+    const ctx = { nowSec: nowSec(), today: today() };
+    for (const row of rows) {
+      if (!row || !row.ev) continue;
+      const v = validate(row.ev, ctx);
+      if (!v.ok || v.date !== date) continue;
+      const cur = map.get(row.ev.pubkey);
+      if (cur && (cur.ev.id === row.ev.id || newer(cur.ev, row.ev))) continue;
+      map.set(row.ev.pubkey, { pk: row.ev.pubkey, d: date, ev: row.ev, seenAt: cur ? cur.seenAt : row.seenAt || 0, hashOk: v.sheet.hashOk, sheet: v.sheet });
+    }
+    if (me) { const r = map.get(me); if (r) maybeOwnMerge(r); }
+    emitDay(date);
+    return map;
+  });
+  tagLoads.set(date, p);
+  return p;
+}
+
+// ---- ingest (§5.6) ---------------------------------------------------------------------------------
+function ingest(ev, source) {
+  const p = ingestNow(ev, source).then((why) => { if (why) stats.rejected++; else stats.ingested++; return why; }, () => 'error');
+  inflight.add(p);
+  p.finally(() => inflight.delete(p));
+  return p;
+}
+async function ingestNow(ev, source) {
+  const v = validate(ev, { nowSec: nowSec(), today: today() });
+  if (!v.ok) return v.reason;
+  const { date, sheet } = v;
+  const map = await loadTag(date);
+  const pk = ev.pubkey;
+  const mine = pk === me;
+  // own events merge even when older than the newest held: another device's marks must not be lost
+  const known = () => { const r = map.get(pk); return r && (r.ev.id === ev.id || newer(r.ev, ev)); };
+  if (mine ? ownSeen.has(ev.id) || (map.get(pk) && map.get(pk).ev.id === ev.id) : known()) return 'known';
+  if (source !== 'idb' && source !== 'local') {
+    let ok = false;
+    try { ok = !!T && (await T.crypto.verify(ev)); } catch {}
+    if (!ok) return 'verify';
+  }
+  const clean = cleanEv(ev);
+  if (mine && sheet.hashOk && source !== 'local') { ownSeen.add(ev.id); ownMerge(date, sheet, clean); }
+  if (known()) return mine ? null : 'known';
+  const prev = map.get(pk);
+  if (!prev && map.size >= C.STORE_PER_TAG && !mine) return 'full';
+  const rec = { pk, d: date, ev: clean, seenAt: prev ? prev.seenAt : nowMs(), hashOk: sheet.hashOk, sheet };
+  map.set(pk, rec);
+  db.putSheet({ pk, d: date, ev: clean, seenAt: rec.seenAt, hashOk: rec.hashOk }).catch(() => {});
+  emitDay(date);
+  if (!mine && source !== 'idb') scheduleForward(rec);
+  return null;
+}
+
+/** Runs the own merge for a held sheet of mine that is newer than what my record has seen. */
+function maybeOwnMerge(rec) {
+  if (rec.pk !== me || !rec.hashOk || ownSeen.has(rec.ev.id)) return;
+  ownSeen.add(rec.ev.id);
+  ownMerge(rec.d, rec.sheet, rec.ev);
+}
+
+// §4.3: adopt the merge and publish it if it differs from the incoming content; otherwise the incoming
+// event becomes my latest and nothing is published, so devices converge without ping-pong.
+function ownMerge(date, sheet, ev) {
+  const o = ownRec(date, true);
+  if (!o) return;
+  const m = mergeSheet({ r: o.r, e: o.e }, sheet);
+  if (!o.last || newer(ev, o.last)) {
+    o.last = { id: ev.id, created_at: ev.created_at };
+    if (ownEv.has(date) && ownEv.get(date).id !== ev.id) ownEv.delete(date);
+  }
+  o.r = m.r;
+  o.e = m.e;
+  if (canonical({ h: sheet.h, r: m.r, e: m.e }) !== ev.content) {
+    o.dirty = true;
+    schedulePublish(date);
+  } else if (o.last.id === ev.id) {
+    o.dirty = false;
+    o.acked = true;
+  }
+  saveOwn(o);
+  emitDay(date);
+  connChanged();
+}
+
+// ---- edits -------------------------------------------------------------------------------------------
+const markableDay = (date) => isDate(date) && date >= text().FIRST_DAY && date <= today();
+function mark(date, idx, on) {
+  if (!me || !markableDay(date) || !Number.isInteger(idx)) return false;
+  const t = text().page(date).tokens[idx];
+  if (!t || !t.mk) return false;
+  const o = ownRec(date, true);
+  const cur = o.e.get(idx);
+  if (!!on === !!(cur && cur.on)) return true;     // already so
+  if (on && onCount(o.e) >= C.K) return false;
+  const c = nextC(o);
+  if (c > MAXC) return false;
+  o.e.set(idx, { c, on: on ? 1 : 0 });
+  edited(o);
+  return true;
+}
+function reveal(date) {
+  if (!isDate(date)) return;
+  if (!me) {
+    const seen = (pref('seen') || []).filter(isDate);
+    if (!seen.includes(date)) { seen.push(date); pref('seen', seen.slice(-60)); }
+    emitDay(date, true);
+    return;
+  }
+  if (!markableDay(date)) return;
+  const o = ownRec(date, true);
+  if (o.r) return;
+  const c = nextC(o);
+  if (c > MAXC) return;
+  o.r = c;
+  edited(o);
+}
+function revealed(date) {
+  if (me) { const o = ownRec(date); return !!(o && o.r); }
+  const seen = pref('seen');
+  return Array.isArray(seen) && seen.includes(date);
+}
+function edited(o) {
+  o.dirty = true;
+  saveOwn(o);
+  emitDay(o.d, true);
+  schedulePublish(o.d);
+  connChanged();
+}
+
+// ---- own publish (§5.3) ------------------------------------------------------------------------------
+const pubTimers = new Map(), lastSign = new Map(), signing = new Set();
+function schedulePublish(date, wait = 2000) {
+  clearTimeout(pubTimers.get(date));
+  pubTimers.set(date, later(() => { pubTimers.delete(date); flush(date); }, wait));
+}
+async function flush(date, force) {
+  const o = ownRec(date);
+  const key = sk;
+  if (!o || !o.dirty || !key || !T || signing.has(date)) return;
+  if (!eose.has(date)) { resubscribe(); return; }       // EOSE gate: oneose flushes again
+  const gap = nowMs() - (lastSign.get(date) || -Infinity);
+  if (!force && gap < 5000) { schedulePublish(date, 5000 - gap); return; }
+  clearTimeout(pubTimers.get(date));
+  pubTimers.delete(date);
+  signing.add(date);
+  lastSign.set(date, nowMs());
+  const content = ownContent(o);
+  const created_at = Math.max(nowSec(), o.last ? o.last.created_at + 1 : 0);
+  let ev;
+  try { ev = await T.crypto.finalize({ kind: C.KIND, created_at, tags: [['d', dayTag(date)]], content }, key); }
+  catch (e) { console.warn('noisewords: signing failed', e); }
+  signing.delete(date);
+  if (!ev) return;
+  ev = cleanEv(ev);
+  if (o.last && o.last.created_at >= ev.created_at) { o.dirty = true; schedulePublish(date); return; }   // another device got ahead meanwhile
+  o.last = { id: ev.id, created_at: ev.created_at };
+  o.acked = false;
+  o.dirty = ownContent(o) !== content;                  // edited while signing: sign again later
+  saveOwn(o);
+  ownEv.set(date, ev);
+  ownSeen.add(ev.id);
+  stats.signs++;
+  const map = await loadTag(date);
+  const sheet = parseContent(content, text().page(date));
+  const prev = map.get(ev.pubkey);
+  map.set(ev.pubkey, { pk: ev.pubkey, d: date, ev, seenAt: prev ? prev.seenAt : nowMs(), hashOk: true, sheet });
+  db.putSheet({ pk: ev.pubkey, d: date, ev, seenAt: prev ? prev.seenAt : nowMs(), hashOk: true }).catch(() => {});
+  publishOwn(date, ev);
+  meshBroadcast([ev]);
+  if (o.dirty) schedulePublish(date);
+  connChanged();
+}
+function flushAll() {
+  const m = me && ownAll.get(me);
+  if (m) m.forEach((o, d) => { if (o.dirty) flush(d, true); });
+}
+async function publishOwn(date, ev) {
+  const res = await publishTo(ev, writable());
+  if (!res.some((x) => x.ok)) return;
+  const o = ownRec(date, false, ev.pubkey);
+  if (o && o.last && o.last.id === ev.id && !o.acked) {
+    o.acked = true;
+    saveOwn(o);
+    emit('ack', { date });
+    connChanged();
+  }
+}
+function retryOutbox() {
+  const m = me && ownAll.get(me);
+  if (!m || !T) return;
+  m.forEach((o, d) => {
+    const ev = ownEv.get(d);
+    if (!o.acked && ev && o.last && ev.id === o.last.id) publishOwn(d, ev);
+    if (o.dirty && !pubTimers.has(d)) flush(d);
+  });
+}
+
+// ---- relays (§5.2) -----------------------------------------------------------------------------------
+const roSession = new Set();                // read-only for this session
+const interval = new Map(), lastPub = new Map();
+function writable() {
+  if (!T) return [];
+  const stored = pref('relays.ro') || {}, now = nowMs();
+  return T.relays.urls.filter((u) => !roSession.has(u) && !(stored[u] > Date.now()) && now - (lastPub.get(u) || -Infinity) >= (interval.get(u) || 0));
+}
+async function publishTo(ev, urls) {
+  if (!T || !urls.length) return [];
+  const at = nowMs();
+  urls.forEach((u) => lastPub.set(u, at));
+  let res = [];
+  try { res = await T.relays.publish(ev, urls); } catch { return []; }
+  stats.publishes++;
+  return res.map(({ url, ok, reason }) => {
+    const why = String(reason || '');
+    if (/^rate-limited:/.test(why)) interval.set(url, Math.min(120000, Math.max(5000, (interval.get(url) || 0) * 2)));
+    else if (/^(blocked|pow|auth-required|restricted|invalid):/.test(why)) {
+      roSession.add(url);
+      const stored = pref('relays.ro') || {};
+      stored[url] = Date.now() + 7 * 86400000;
+      pref('relays.ro', stored);
+    }
+    return { url, ok: !!ok || /^duplicate:/.test(why), reason: why };
+  });
+}
+
+let sub = null, subKey = '', subAt = 0, upLast = new Set();
+function wantDates() {
+  const t = today(), ds = new Set([t]);
+  if (viewed) ds.add(viewed);
+  if (new Date(nowMs()).getHours() < 12) ds.add(text().addDays(t, -1));
+  const m = me && ownAll.get(me);
+  if (m) m.forEach((o, d) => { if (o.dirty && !eose.has(d)) ds.add(d); });
+  return [...ds].filter(isDate).sort();
+}
+function resubscribe(force) {
+  if (!T || !booted) return;
+  const dates = wantDates(), key = dates.join(',');
+  if (!force && sub && key === subKey) return;
+  if (sub) { try { sub.close(); } catch {} }
+  subKey = key;
+  subAt = Date.now();
+  let s = null;
+  s = T.relays.subscribe({ kinds: [C.KIND], '#d': dates.map(dayTag), limit: 500 }, {
+    onevent: (ev) => { ingest(ev, 'relay'); },
+    oneose: async () => {
+      await Promise.allSettled([...inflight]);
+      dates.forEach((d) => eose.add(d));
+      const m = me && ownAll.get(me);
+      if (m) dates.forEach((d) => { const o = m.get(d); if (o && o.dirty && !pubTimers.has(d)) flush(d); });
+    },
+  });
+  sub = s;
+}
+function checkRelays() {
+  if (!T) return;
+  const up = T.relays.connected();
+  // reopen when a relay that was up went down, or nothing is up (a relay that never answers doesn't loop us)
+  const lost = [...upLast].some((u) => !up.has(u));
+  upLast = up;
+  if (lost || up.size === 0) resubscribe(true);
+}
+
+let historyFor = null;
+function loadHistory() {
+  if (!T || !me || historyFor === me) return;
+  const who = (historyFor = me);
+  const pend = [];
+  let s = null, done = false;
+  s = T.relays.subscribe({ kinds: [C.KIND], authors: [who], limit: 400 }, {
+    onevent: (ev) => { pend.push(ingest(ev, 'history')); },
+    oneose: async () => {
+      if (done) return;
+      done = true;
+      if (s) try { s.close(); } catch {}
+      await Promise.allSettled(pend);
+      if (me === who) emit('history', {});
+    },
+  });
+  if (done) try { s.close(); } catch {}
+}
+
+// ---- store-and-forward (§5.4) -------------------------------------------------------------------------
+const fwd = { total: 0, perRelay: new Map(), timers: new Map() };
+function scheduleForward(rec) {
+  if (!T) return;
+  const t = today();
+  if (rec.d !== t && rec.d !== text().addDays(t, -1)) return;
+  const key = rec.pk + '|' + rec.d;
+  if (fwd.timers.has(key)) return;            // fires once with whatever is newest by then
+  fwd.timers.set(key, later(() => { fwd.timers.delete(key); forward(rec.pk, rec.d); }, 10000 + Math.random() * 30000));
+}
+function forward(pk, d) {
+  const map = tags.get(d), rec = map && map.get(pk);
+  if (!rec || fwd.total >= 200) return;
+  const t = today();
+  if (d !== t && d !== text().addDays(t, -1)) return;
+  const seen = T.relays.seenOn(rec.ev.id), now = nowMs();
+  const recent = (u) => (fwd.perRelay.get(u) || []).filter((x) => now - x < 60000);
+  const urls = writable().filter((u) => !seen.has(u) && recent(u).length < 20);
+  if (!urls.length) return;
+  fwd.total++;
+  stats.forwards++;
+  urls.forEach((u) => fwd.perRelay.set(u, [...recent(u), now]));
+  publishTo(rec.ev, urls);
+}
+
+// ---- mesh (§5.5) ---------------------------------------------------------------------------------------
+let room = null, act = null, leaveTimer = null, hiddenAt = 0;
+const bound = new Map();          // peerId -> pk, in bind order
+const hsOk = new Map();           // peerId -> pk: our side of the handshake passed, waiting for onPeerJoin
+const presOf = new Map();         // peerId -> date they view
+const blocked = new Set();        // pks closed for budget violations, this session
+const budgets = new Map();        // peerId -> windows
+const outLog = new Map();         // peerId -> [{t, n, bytes}] of inv answers we sent (paced under their budget)
+
+function canJoin() { return !!(T && T.joinRoom && me && sk && visible()); }
+function joinMesh() {
+  clearTimeout(leaveTimer);
+  if (room || !canJoin()) return;
+  try {
+    room = T.joinRoom({ appId: C.APP_ID, password: C.ROOM_PASSWORD, relayConfig: { redundancy: 8, warnOnRelayFailure: false }, turnConfig: [] },
+      C.ROOM, { onPeerHandshake: handshake, onJoinError: () => {} });
+  } catch (e) { console.warn('noisewords: mesh unavailable', e); room = null; return; }
+  const r = room;
+  act = { pres: r.makeAction('pres'), inv: r.makeAction('inv'), ev: r.makeAction('ev') };
+  const peerOf = (ctx) => (typeof ctx === 'string' ? ctx : ctx && ctx.peerId);
+  const guard = (fn) => (data, ctx) => {
+    const id = peerOf(ctx);
+    if (room !== r || !bound.has(id)) return;          // unbound peers are ignored
+    if (!spend(id, 'bytes', approxBytes(data))) return;
+    fn(data, id);
+  };
+  act.pres.onMessage = guard(onPres);
+  act.inv.onMessage = guard((d, id) => { onInv(d, id); });
+  act.ev.onMessage = guard(onEvs);
+  r.onPeerJoin = (id) => {
+    if (room !== r) return;
+    const pk = hsOk.get(id);
+    hsOk.delete(id);
+    if (!pk || blocked.has(pk)) { closePeer(id); return; }
+    bind(id, pk);
+    sendPres(id);
+    sendInv(id);
+  };
+  r.onPeerLeave = (id) => { hsOk.delete(id); unbind(id); };
+  connChanged();
+}
+function leaveMesh() {
+  clearTimeout(leaveTimer);
+  if (!room) return;
+  const r = room;
+  room = null;
+  act = null;
+  try { Promise.resolve(r.leave()).catch(() => {}); } catch {}
+  hsOk.clear();
+  [...bound.keys()].forEach(unbind);
+  connChanged();
+}
+function closePeer(id) {
+  try { const p = room && room.getPeers()[id]; if (p && typeof p.close === 'function') p.close(); } catch {}
+}
+
+async function handshake(peerId, send, receive) {
+  if (bound.size + hsOk.size >= C.MESH_CAP - 1) throw new Error('mesh full');
+  const key = sk, r = room;
+  if (!key || !T) throw new Error('nameless');
+  const hello = await T.crypto.finalize({ kind: C.HELLO_KIND, created_at: nowSec(), tags: [], content: T.selfId + '|' + C.ROOM }, key);
+  await send(cleanEv(hello));
+  const got = await receive();
+  const h = got && typeof got === 'object' && 'data' in got && !('kind' in got) ? got.data : got;
+  const pk = await checkHello(h, peerId);
+  if (!pk) throw new Error('bad hello');
+  if (room !== r || bound.size + hsOk.size >= C.MESH_CAP - 1) throw new Error('mesh full');
+  hsOk.set(peerId, pk);
+  later(() => { if (hsOk.get(peerId) === pk) hsOk.delete(peerId); }, 15000);   // never activated
+}
+async function checkHello(h, peerId) {
+  if (!plainObj(h) || h.kind !== C.HELLO_KIND || typeof h.content !== 'string' || h.content !== peerId + '|' + C.ROOM) return null;
+  if (typeof h.id !== 'string' || !HEX64.test(h.id) || typeof h.pubkey !== 'string' || !HEX64.test(h.pubkey) || typeof h.sig !== 'string' || !HEX128.test(h.sig)) return null;
+  if (!Number.isInteger(h.created_at) || Math.abs(h.created_at - nowSec()) > 300 || !Array.isArray(h.tags)) return null;
+  if (blocked.has(h.pubkey)) return null;
+  let ok = false;
+  try { ok = await T.crypto.verify(h); } catch {}
+  return ok ? h.pubkey : null;
+}
+
+const pkPeers = (pk) => [...bound].filter(([, p]) => p === pk).length;
+function bind(id, pk) {
+  const fresh = pkPeers(pk) === 0;
+  bound.set(id, pk);
+  budgets.set(id, {});
+  emitPeers(fresh && pk !== me ? [pk] : [], []);
+  emitDay(viewed);
+  connChanged();
+}
+function unbind(id) {
+  const pk = bound.get(id);
+  presOf.delete(id);
+  budgets.delete(id);
+  outLog.delete(id);
+  if (pk === undefined) return;
+  bound.delete(id);
+  emitPeers([], pk !== me && pkPeers(pk) === 0 ? [pk] : []);
+  emitDay(viewed);
+  connChanged();
+}
+// joined/left list pks (a player on two devices joins once and leaves with their last peer)
+const emitPeers = (joined, left) => emit('peers', { peers: peers(), joined, left });
+function peers() {
+  const out = new Map();
+  for (const [id, pk] of bound) {
+    if (pk === me) continue;
+    const d = presOf.get(id) || null;
+    if (!out.has(pk)) out.set(pk, { pk, d });
+    else if (d) out.get(pk).d = d;
+  }
+  return [...out.values()];
+}
+
+// budgets per peer: 1 MB/min, ev ≤ 100 events/10 s, inv ≤ 3/min, pres ≤ 10/s; a violation closes and blocks
+const LIMITS = { bytes: [1048576, 60000], ev: [100, 10000], inv: [3, 60000], pres: [10, 1000] };
+const approxBytes = (data) => { try { return JSON.stringify(data).length; } catch { return 1048577; } };
+function spend(id, what, n) {
+  const b = budgets.get(id);
+  if (!b) return false;
+  const [cap, win] = LIMITS[what], now = nowMs();
+  const w = b[what] && now - b[what].t0 < win ? b[what] : (b[what] = { t0: now, n: 0 });
+  w.n += n;
+  if (w.n <= cap) return true;
+  violate(id);
+  return false;
+}
+function violate(id) {
+  const pk = bound.get(id);
+  if (pk) blocked.add(pk);
+  closePeer(id);
+  unbind(id);
+}
+
+let presTimer = null;
+function sendPres(target) {
+  if (!act || !viewed) return;
+  act.pres.send({ d: viewed }, target ? { target } : undefined).catch(() => {});
+}
+function presSoon() {   // trailing 250 ms: day stepping by key repeat stays under a peer's pres budget
+  clearTimeout(presTimer);
+  presTimer = later(() => sendPres(), 250);
+}
+function onPres(data, id) {
+  if (!spend(id, 'pres', 1)) return;
+  if (!plainObj(data) || !isDate(data.d)) return;
+  if (presOf.get(id) === data.d) return;
+  presOf.set(id, data.d);
+  emitPeers([], []);
+}
+async function sendInv(id) {
+  const t = today();
+  for (const d of [...new Set([t, viewed || t])]) {
+    const map = await loadTag(d);
+    if (!act || !bound.has(id)) return;
+    const h = [...map.values()].slice(0, 500).map((r) => [r.pk.slice(0, 16), r.ev.created_at]);
+    act.inv.send({ t: dayTag(d), h }, { target: id }).catch(() => {});
+  }
+}
+async function onInv(data, id) {
+  if (!spend(id, 'inv', 1)) return;
+  if (!plainObj(data) || !Array.isArray(data.h) || data.h.length > 500) return;
+  const d = dateOfTag(data.t);
+  if (!d) return;
+  const has = new Map();
+  for (const x of data.h) {
+    if (!Array.isArray(x) || typeof x[0] !== 'string' || !HEX16.test(x[0]) || !Number.isInteger(x[1])) return;
+    has.set(x[0], x[1]);
+  }
+  const map = await loadTag(d);
+  const send = [...map.values()].filter((r) => !has.has(r.pk.slice(0, 16)) || has.get(r.pk.slice(0, 16)) < r.ev.created_at).map((r) => r.ev);
+  const a = act;
+  for (let i = 0; i < send.length; i += 25) {
+    const batch = send.slice(i, i + 25);
+    await pace(id, batch);
+    if (act !== a || !bound.has(id)) return;
+    try { await a.ev.send(batch, { target: id }); } catch { return; }
+  }
+}
+// we answer under the receiver's budgets (80 events/10 s, 800 KB/min), or an honest peer would block us
+async function pace(id, batch) {
+  const n = batch.length, bytes = approxBytes(batch);
+  for (;;) {
+    const now = nowMs(), log = (outLog.get(id) || []).filter((x) => now - x.t < 60000);
+    outLog.set(id, log);
+    const evs = log.filter((x) => now - x.t < 10000).reduce((s, x) => s + x.n, 0);
+    const kb = log.reduce((s, x) => s + x.bytes, 0);
+    if (evs + n <= 80 && kb + bytes <= 819200) { log.push({ t: now, n, bytes }); return; }
+    await sleep(1000);
+    if (!bound.has(id)) return;
+  }
+}
+function onEvs(data, id) {
+  if (!Array.isArray(data) || data.length > 25) return;
+  if (!spend(id, 'ev', data.length)) return;
+  for (const ev of data) ingest(ev, 'mesh');
+}
+function meshBroadcast(evs) {
+  if (act && bound.size) act.ev.send(evs).catch(() => {});
+}
+
+// ---- identity ----------------------------------------------------------------------------------------
+async function derivePublicKey(skHex) {
+  if (typeof skHex !== 'string' || !HEX64.test(skHex)) return null;
+  const t = ready ? await ready : T;
+  if (!t) return null;
+  try { const pk = await t.crypto.getPublicKey(skHex); return typeof pk === 'string' && HEX64.test(pk) ? pk : null; } catch { return null; }
+}
+let persisted = false;
+function adopt(key, pk) {
+  sk = key;
+  me = pk;
+  mineMap(pk);
+  // own events held before this sign-in (or from other devices) merge into the local record
+  tags.forEach((map) => { const r = map.get(pk); if (r) maybeOwnMerge(r); });
+  // the outbox needs the signed events of unacked days
+  const m = ownAll.get(pk);
+  const pend = [];
+  m.forEach((o, d) => {
+    if (!o.acked && o.last && !ownEv.has(d)) pend.push(db.getSheet(pk, d).then((row) => { if (row && row.ev && row.ev.id === o.last.id) ownEv.set(d, row.ev); }).catch(() => {}));
+  });
+  Promise.all(pend).then(retryOutbox);
+  emit('identity', { pk });
+  emitDay(viewed, true);
+  connChanged();
+  loadHistory();
+  joinMesh();
+}
+async function signIn(skHex) {
+  if (typeof skHex !== 'string' || !HEX64.test(skHex)) throw new Error('noisewords: bad key');
+  if (booting) await booting;
+  const pk = await derivePublicKey(skHex);
+  if (!pk) throw new Error('noisewords: crypto unavailable');
+  if (me && me !== pk) signOut();
+  lsSet('sk', skHex);
+  if (!persisted) {
+    persisted = true;
+    try { const s = globalThis.navigator && navigator.storage; if (s && s.persist) s.persist().catch(() => {}); } catch {}
+  }
+  if (me !== pk) adopt(skHex, pk);
+  return pk;
+}
+function signOut() {
+  flushAll();                 // signs what it can now; the rest stays dirty in storage for the next sign-in
+  leaveMesh();
+  lsSet('sk', null);
+  const was = me;
+  sk = null;
+  me = null;
+  historyFor = null;
+  ownEv.clear();
+  pubTimers.forEach((t) => clearTimeout(t));
+  pubTimers.clear();
+  if (was) { emit('identity', { pk: null }); emitDay(viewed, true); connChanged(); }
+}
+
+// ---- reading -------------------------------------------------------------------------------------------
+function day(date) {
+  if (!isDate(date)) return null;
+  const page = text().page(date);
+  const isRev = revealed(date);
+  const map = tags.get(date);
+  if (!tagLoads.has(date)) loadTag(date);
+  let mine = null;
+  if (me) {
+    const o = ownRec(date), marks = new Map(), r = o ? o.r : 0;
+    if (o) [...o.e].sort((a, b) => a[0] - b[0]).forEach(([i, v]) => { if (v.on) marks.set(i, { c: v.c, blind: blind(v, r) }); });
+    mine = { marks, r, left: C.K - marks.size };
+  }
+  const live = new Map();
+  for (const pk of bound.values()) if (!live.has(pk)) live.set(pk, live.size);
+  const cands = [];
+  if (map) for (const rec of map.values()) {
+    if (!rec.hashOk || rec.pk === me) continue;
+    const s = new Set();
+    [...rec.sheet.e].sort((a, b) => a[0] - b[0]).forEach(([i, v]) => { if (v.on) s.add(i); });
+    if (s.size) cands.push({ pk: rec.pk, marks: s, live: live.has(rec.pk), seenAt: rec.seenAt });
+  }
+  cands.sort((a, b) => (a.live !== b.live ? (a.live ? -1 : 1)
+    : a.live ? live.get(a.pk) - live.get(b.pk)
+    : a.seenAt - b.seenAt || (a.pk < b.pk ? -1 : 1)));
+  const others = cands.slice(0, C.DRAW_OTHERS).map(({ pk, marks, live: l }) => ({ pk, marks, live: l }));
+  const butter = new Set();
+  if (isRev) {
+    const count = new Map();
+    const add = (i) => count.set(i, (count.get(i) || 0) + 1);
+    others.forEach((o) => o.marks.forEach(add));
+    if (mine) mine.marks.forEach((_, i) => add(i));
+    const counts = [...count.values()].sort((a, b) => b - a);
+    const th = Math.max(2, counts.length >= 5 ? counts[4] : 1);
+    count.forEach((n, i) => { if (n >= th) butter.add(i); });
+  }
+  return { date, tag: dayTag(date), count: page.count, hash: page.hash, revealed: isRev, mine, others, authors: cands.length, butter };
+}
+function history() {
+  const out = new Map(), m = me && ownAll.get(me);
+  if (m) [...m.keys()].sort().forEach((d) => { const o = m.get(d), n = onCount(o.e); if (n) out.set(d, { marks: n, r: o.r }); });
+  return out;
+}
+function conn() {
+  const unsent = countUnsent();
+  if (!T) return { state: booting && !booted ? 'wait' : 'off', unsent };
+  let up = 0;
+  try { up = T.relays.connected().size; } catch {}
+  if (up > 0 || bound.size > 0) return { state: 'on', unsent };
+  const now = Date.now();
+  return { state: now - startedAt < 8000 || now - subAt < 8000 ? 'wait' : 'off', unsent };
+}
+function view(date) {
+  if (!isDate(date) || date === viewed) return;
+  viewed = date;
+  loadTag(date);
+  resubscribe();
+  presSoon();
+}
+
+// ---- debug (?debug) ----------------------------------------------------------------------------------
+async function probe() {
+  if (!T) return [];
+  const key = randomHex(32), tag = 'noisewords/probe/' + randomHex(6);
+  let pk = null;
+  try { pk = await T.crypto.getPublicKey(key); } catch {}
+  if (!pk) return [];
+  const query = (url) => new Promise((res) => {
+    const got = [];
+    let s = null, done = false;
+    const end = () => { if (done) return; done = true; if (s) try { s.close(); } catch {} res(got); };
+    s = T.relays.subscribe({ kinds: [C.KIND], authors: [pk], '#d': [tag] }, { onevent: (ev) => got.push(ev), oneose: end }, [url]);
+    if (done) try { s.close(); } catch {}
+    later(end, 8000);
+  });
+  const mk = (content, at) => T.crypto.finalize({ kind: C.KIND, created_at: at, tags: [['d', tag]], content }, key);
+  return Promise.all(T.relays.urls.map(async (url) => {
+    const t0 = Date.now(), row = { url, publish: false, read: false, replace: false, ms: 0, reason: '' };
+    try {
+      const now = nowSec(), a = await mk('a', now - 1);
+      const [ra] = await T.relays.publish(a, [url]);
+      row.publish = !!(ra && ra.ok);
+      row.reason = (ra && ra.reason) || '';
+      row.read = (await query(url)).some((e) => e.id === a.id);
+      const b = await mk('b', now);
+      const [rb] = await T.relays.publish(b, [url]);
+      const after = await query(url);
+      row.replace = !!(rb && rb.ok) && after.some((e) => e.id === b.id) && !after.some((e) => e.id === a.id);
+    } catch (e) { row.reason = String((e && e.message) || e); }
+    row.ms = Date.now() - t0;
+    return row;
+  }));
+}
+function debug() {
+  if (!opts || !opts.debug) return null;
+  const m = me && ownAll.get(me);
+  return {
+    store: {
+      kind: db.kind,
+      tags: Object.fromEntries([...tags].map(([d, mp]) => [d, mp.size])),
+      own: m ? Object.fromEntries([...m].map(([d, o]) => [d, { r: o.r, on: onCount(o.e), dirty: o.dirty, acked: o.acked, last: o.last }])) : {},
+      eose: [...eose],
+    },
+    seenOn: (id) => (T ? [...T.relays.seenOn(id)] : []),
+    offset,
+    bound: [...bound].map(([peer, pk]) => ({ peer, pk, d: presOf.get(peer) || null })),
+    relays: T ? { urls: T.relays.urls.slice(), connected: [...T.relays.connected()], ro: [...roSession], interval: Object.fromEntries(interval), writable: writable() } : null,
+    stats: { ...stats },
+    probe,
+    setOffset(ms) { offset = Number(ms) || 0; },
+  };
+}
+
+// ---- start ---------------------------------------------------------------------------------------------
+function start(o) {
+  if (!booting) booting = boot(o || {});
+  return booting;
+}
+async function boot(o) {
+  try {
+    let q = null;
+    try { q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null; } catch {}
+    const has = (k) => !!(q && q.has(k));
+    opts = {
+      mock: o.mock !== undefined ? !!o.mock : has('mock'),
+      dev: String(o.dev !== undefined ? o.dev : (q && q.get('dev')) || '').replace(/[^0-9a-z]/gi, '').slice(0, 8),
+      debug: o.debug !== undefined ? !!o.debug : has('debug'),
+      memory: !!o.memory,
+    };
+    lsPrefix = opts.mock ? 'nwm' + opts.dev + '.' : 'nw.';
+    startedAt = Date.now();
+    ready = opts.mock ? Promise.resolve(NW.mock || null) : loadLibs();
+    const clock = opts.mock || typeof fetch !== 'function' || typeof location === 'undefined' ? null : syncClock();
+    const storeP = openStore(opts.mock ? 'noisewords-mock' + opts.dev : 'noisewords', opts.memory);
+    db = await storeP;
+    tagLoads.clear();             // a day() before start() loaded from the empty placeholder store; load again
+    await clock;
+    lastToday = today();
+    if (!viewed) viewed = lastToday;
+
+    // own records, then prune others' sheets past retention (own pks are kept forever)
+    const rows = await db.allOwn().catch(() => []);
+    for (const r of rows) {
+      if (!r || !HEX64.test(r.pk || '') || !isDate(r.d)) continue;
+      const e = new Map();
+      for (const x of r.e || []) if (Array.isArray(x) && isInt(x[0], 0, 999) && isInt(x[1], 1, MAXC)) e.set(x[0], { c: x[1], on: x[2] ? 1 : 0 });
+      mineMap(r.pk).set(r.d, { pk: r.pk, d: r.d, e, r: r.r || 0, last: r.last || null, acked: r.acked !== false, dirty: !!r.dirty });
+    }
+    db.prune(text().addDays(lastToday, -C.KEEP_DAYS), new Set(ownAll.keys())).catch(() => {});
+    await Promise.all([loadTag(lastToday), loadTag(viewed)]);
+
+    T = await ready;
+    const key = lsGet('sk');
+    if (key && HEX64.test(key)) {
+      const pk = await derivePublicKey(key);
+      if (pk) adopt(key, pk);     // without the libraries: nameless this session; the key stays for next time
+    }
+    booted = true;
+    resubscribe(true);
+    timers.push(bg(setInterval(() => {
+      const t = today();
+      if (t !== lastToday) { lastToday = t; emit('today', { date: t }); resubscribe(); }
+      checkRelays();
+    }, 30000)));
+    timers.push(bg(setInterval(retryOutbox, 60000)));
+    timers.push(bg(setInterval(connChanged, 2000)));
+    listen('online', () => { resubscribe(true); retryOutbox(); joinMesh(); connChanged(); });
+    listen('pagehide', () => { flushAll(); leaveMesh(); });
+    listen('pageshow', (e) => { if (e && e.persisted) { resubscribe(true); joinMesh(); } });
+    if (typeof document !== 'undefined') listen('visibilitychange', onVisibility, document);
+    if (opts.debug || opts.mock) globalThis.__nw = NW.net;
+    connChanged();
+  } catch (e) {
+    console.error('noisewords: start failed', e);
+    booted = true;
+  }
+}
+async function syncClock() {
+  try {
+    const r = await Promise.race([fetch(location.href, { method: 'HEAD', cache: 'no-store' }), sleep(4000).then(() => null)]);
+    const d = r ? Date.parse(r.headers.get('Date') || '') : NaN;
+    if (Number.isFinite(d) && Math.abs(d - Date.now()) > 30000) offset = d - Date.now();
+  } catch {}
+}
+function onVisibility() {
+  if (!visible()) {
+    hiddenAt = nowMs();
+    flushAll();
+    clearTimeout(leaveTimer);
+    leaveTimer = later(leaveMesh, 300000);
+    return;
+  }
+  clearTimeout(leaveTimer);
+  if (hiddenAt && nowMs() - hiddenAt > 60000) resubscribe(true);
+  hiddenAt = 0;
+  retryOutbox();
+  joinMesh();
+}
+/** Teardown for tests and the debug console: closes the subscription and the mesh, stops the timers. */
+function stop() {
+  timers.splice(0).forEach((t) => clearInterval(t));
+  if (sub) try { sub.close(); } catch {}
+  sub = null;
+  leaveMesh();
+  pubTimers.forEach((t) => clearTimeout(t));
+  fwd.timers.forEach((t) => clearTimeout(t));
+}
+
+NW.net = Object.freeze({
+  start, nowMs, nowSec, today, derivePublicKey, signIn, signOut, me: () => me,
+  view, day, mark, reveal, revealed, history, peers, conn, on, debug,
+  pref, stop,
+});
+})();
+
+// ---- src/app.js
+// Noise Words: the page. One sheet of the day's noise text, a bar above it and a dock below.
+// It codes only against NW.text (§6.1), NW.pattern (§6.2) and NW.net / NW.sheet (§6.3) of docs/spec.md.
+// The page DOM is built once per date; 'day' events patch the word spans by index (classes, the fill's
+// pattern class, the ribbon's segments), so nothing reflows and running animations keep going.
+// The bar, dock, popover and legend are re-described from state and morphed into place (Five Beads' morph()).
+// No string from the network ever reaches the DOM: only validated integers and 'p-'+pk.slice(0,16) classes.
+// The pure helpers at the top touch no DOM and are exported on NW.app, so node can load this file in vm.
+(() => {
+'use strict';
+const NW = (globalThis.NW = globalThis.NW || {});
+
+// ---- pure helpers ----------------------------------------------------------------------------
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];  // 0 = Monday, as NW.text.weekday
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const EMPTY_MAP = new Map();
+
+/** '10·16', or '2025·10·16' outside the current year. */
+function dateNumerals(date, today) {
+  const [y, m, d] = date.split('-');
+  return (today && y !== today.slice(0, 4) ? y + '·' : '') + m + '·' + d;
+}
+/** 'Friday October 16' (plus the year outside the current one): screen readers only. */
+function dateWords(date, today) {
+  const [y, m, d] = date.split('-').map(Number);
+  return `${DAYS[NW.text.weekday(date)]} ${MONTHS[m - 1]} ${d}` + (today && String(y) !== today.slice(0, 4) ? ` ${y}` : '');
+}
+/** DayView.authors as a count, whether net hands over a number or a collection. */
+function nAuthors(dv) {
+  const a = dv && dv.authors;
+  if (typeof a === 'number') return a;
+  if (a && typeof a.size === 'number') return a.size;
+  if (Array.isArray(a)) return a.length;
+  return dv && dv.others ? dv.others.length : 0;
+}
+/** idx → ribbon keys (pattern classes) in drawn order, from the drawn others. */
+function ribbonsOf(dv, cls) {
+  const m = new Map();
+  for (const o of dv.others) for (const i of o.marks) {
+    let a = m.get(i);
+    if (!a) m.set(i, (a = []));
+    a.push(cls ? cls(o.pk) : o.pk);
+  }
+  return m;
+}
+/** My blind marks that at least one drawn other also has on (only once revealed). Ascending idx. */
+function teeluHits(dv) {
+  if (!dv || !dv.revealed || !dv.mine) return [];
+  const out = [];
+  for (const [i, m] of dv.mine.marks) if (m && m.blind && dv.others.some((o) => o.marks.has(i))) out.push(i);
+  return out.sort((a, b) => a - b);
+}
+/** Every (my marked word, other player) pair: 'idx:pk'. */
+function meetings(dv) {
+  const s = new Set();
+  if (!dv || !dv.mine) return s;
+  for (const i of dv.mine.marks.keys()) for (const o of dv.others) if (o.marks.has(i)) s.add(i + ':' + o.pk);
+  return s;
+}
+/** The people of a page, never me: live peers viewing it first (bind order), then the other drawn authors. */
+function people(dv, peers, date, me) {
+  const out = [], seen = new Map();
+  for (const p of peers || []) {
+    if (!p || p.pk === me || p.d !== date || seen.has(p.pk)) continue;
+    const o = { pk: p.pk, here: true, marks: 0 };
+    seen.set(p.pk, o);
+    out.push(o);
+  }
+  for (const o of dv.others) {
+    if (o.pk === me) continue;
+    const e = seen.get(o.pk);
+    if (e) e.marks = o.marks.size;
+    else { const n = { pk: o.pk, here: false, marks: o.marks.size }; seen.set(o.pk, n); out.push(n); }
+  }
+  return out;
+}
+/** The nearest word on the same line within `tol` px: rects are [{i, left, right, top, bottom}]. -1 if none. */
+function nearestWord(rects, x, y, tol = 12) {
+  let best = -1, bd = Infinity;
+  for (const r of rects) {
+    if (y < r.top || y > r.bottom) continue;
+    const d = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+    if (d <= tol && d < bd) { bd = d; best = r.i; }
+  }
+  return best;
+}
+/** ↑/↓: the word on the adjacent line nearest by x. -1 if there is no such line. */
+function lineStep(rects, cur, dir) {
+  const c = rects.find((r) => r.i === cur);
+  if (!c) return -1;
+  const cx = (c.left + c.right) / 2;
+  let line = null;
+  for (const r of rects) {
+    if (dir > 0 ? r.top > c.top + 4 && (line === null || r.top < line) : r.top < c.top - 4 && (line === null || r.top > line)) line = r.top;
+  }
+  if (line === null) return -1;
+  let best = -1, bd = Infinity;
+  for (const r of rects) {
+    if (Math.abs(r.top - line) > 4) continue;
+    const d = Math.abs((r.left + r.right) / 2 - cx);
+    if (d < bd) { bd = d; best = r.i; }
+  }
+  return best;
+}
+const plural = (n, one, many) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
+/** #status: "Friday October 16. You marked 3 of 7. 4 others marked this page; their marks are hidden until you reveal." */
+function statusText(dv, o) {
+  const parts = [dateWords(dv.date, o.today) + '.'];
+  if (o.named) parts.push(`You marked ${o.K - (dv.mine ? dv.mine.left : o.K)} of ${o.K}.`);
+  else parts.push('Type any name in the box at the bottom to start marking words.');
+  const n = nAuthors(dv);
+  if (!dv.revealed) parts.push(n ? `${plural(n, 'other', 'others')} marked this page; their marks are hidden until you reveal.` : 'Nobody else has marked this page yet.');
+  else {
+    parts.push(n ? `${plural(n, 'other', 'others')} marked this page.` : 'Nobody else has marked this page yet.');
+    if (dv.butter && dv.butter.size) parts.push(`${plural(dv.butter.size, 'word glows', 'words glow')} as the most marked.`);
+  }
+  return parts.join(' ');
+}
+/** #say on a cursor move: "tavelan, word 12 of 113, marked by you and 2 others". */
+function wordText(tok, count, dv) {
+  const mine = !!(dv.mine && dv.mine.marks.has(tok.i));
+  let state;
+  if (!dv.revealed) state = mine ? 'marked by you' : 'not marked';
+  else {
+    const n = dv.others.filter((o) => o.marks.has(tok.i)).length;
+    state = mine && n ? `marked by you and ${plural(n, 'other', 'others')}` : mine ? 'marked by you' : n ? `marked by ${plural(n, 'other', 'others')}` : 'not marked';
+    if (dv.butter && dv.butter.has(tok.i)) state += ', one of the most marked';
+  }
+  return `${tok.t}, word ${tok.i + 1} of ${count}, ${state}`;
+}
+
+NW.app = Object.freeze({ dateNumerals, dateWords, nAuthors, ribbonsOf, teeluHits, meetings, people, nearestWord, lineStep, statusText, wordText, boot });
+
+// Everything below needs a document; under node the module stops here.
+if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+// ---- drawing helpers (Five Beads) --------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs, parent) => {
+  const e = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+// Ollune's glyph set, plus Five Beads' own in the same hand: 24×24, 1.5px stroke, round caps, currentColor.
+const ST = 'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
+const FILL = 'fill="currentColor"';
+const ICONS = {
+  add: `<path d="M12 6v12M6 12h12" ${ST}/>`,
+  next: `<path d="M10 6l6 6-6 6" ${ST}/>`,
+  sparkle: `<path d="M12 4c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z" ${ST}/>`,
+  rest: `<path d="M15.5 5.5a7 7 0 1 0 3 9.5 5.5 5.5 0 0 1-3-9.5z" ${ST}/>`,
+  done: `<circle cx="12" cy="12" r="6.5" ${FILL}/>`,
+  routine: `<circle cx="12" cy="12" r="7" ${ST} stroke-dasharray="3.2 2.3"/>`,
+  question: `<path d="M9.2 9.2a2.9 2.9 0 1 1 4.2 2.6c-.9.5-1.4 1.2-1.4 2.2" ${ST}/><circle cx="12" cy="17.5" r="1" ${FILL}/>`,
+  dots: `<circle cx="6.5" cy="13" r="1.3" ${FILL}/><circle cx="12" cy="13" r="1.3" ${FILL}/><circle cx="17.5" cy="13" r="1.3" ${FILL}/>`,
+  check: `<path d="M6 12.5l4 4 8-9" ${ST}/>`,
+  me: `<circle cx="12" cy="7.5" r="3.4" ${FILL}/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0z" ${FILL} stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`,
+  person: `<circle cx="12" cy="7.5" r="3" ${ST}/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" ${ST}/>`,
+  eye: `<path d="M3.5 12c2-3.6 5-5.5 8.5-5.5s6.5 1.9 8.5 5.5c-2 3.6-5 5.5-8.5 5.5S5.5 15.6 3.5 12z" ${ST}/><circle cx="12" cy="12" r="2.4" ${FILL}/>`,
+  leave: `<path d="M13.5 5h-5A2.5 2.5 0 0 0 6 7.5v9A2.5 2.5 0 0 0 8.5 19h5" ${ST}/><path d="M11 12h8.5M16.5 9l3 3-3 3" ${ST}/>`,
+  retry: `<path d="M16.5 9.5A6 6 0 1 0 17.5 14" ${ST}/><path d="M16.5 5.5v4h-4" ${ST}/>`,
+};
+function icon(name, cls) {
+  const s = svgEl('svg', { viewBox: '0 0 24 24', class: 'icon' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true', focusable: 'false' });
+  s.innerHTML = ICONS[name] || '';
+  if (name === 'dots') s.classList.add('dots');
+  return s;
+}
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  if (props) for (const k in props) {
+    const v = props[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e[k] = v;          // a property, so morph() can carry it over
+    else if (k === 'style') e.style.cssText = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c);
+  return e;
+}
+// Re-described from state on every change, then morphed into the live DOM: nodes that are still there keep their
+// identity, so focus stays put, a press that began on a button still lands on it, the input keeps its value,
+// and running animations (the beats) keep going. Children match by data-k / data-key, otherwise by position and tag.
+const HANDLERS = ['onclick', 'onkeydown', 'oninput', 'onsubmit', 'onpointerenter', 'onpointerleave', 'onfocus', 'onblur'];
+const TRANSIENT = ['pulse', 'wob', 'slide'];   // one-shot classes added outside the description survive a morph
+const keyOf = (n) => (n.nodeType === 1 ? n.getAttribute('data-k') || n.getAttribute('data-key') : null);
+const sameKind = (a, b) => a.nodeType === b.nodeType && (a.nodeType !== 1 || (a.tagName === b.tagName && a.namespaceURI === b.namespaceURI));
+function morphNode(o, n) {
+  if (o.nodeType !== 1) { if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue; return; }
+  const keep = TRANSIENT.filter((c) => o.classList.contains(c));
+  for (const a of [...o.attributes]) if (!n.hasAttribute(a.name)) o.removeAttribute(a.name);
+  for (const a of [...n.attributes]) if (o.getAttribute(a.name) !== a.value) o.setAttribute(a.name, a.value);
+  for (const c of keep) o.classList.add(c);
+  for (const p of HANDLERS) if (o[p] !== n[p]) o[p] = n[p];
+  morph(o, [...n.childNodes]);
+}
+function morph(parent, kids) {
+  const next = kids.flat().filter((k) => k != null && k !== false).map((k) => (typeof k === 'string' ? document.createTextNode(k) : k));
+  const old = [...parent.childNodes];
+  const keyed = new Map();
+  for (const o of old) { const k = keyOf(o); if (k) keyed.set(k, o); }
+  const used = new Set();
+  let cursor = 0;
+  const result = next.map((n) => {
+    const k = keyOf(n);
+    let o = null;
+    if (k) o = keyed.get(k) || null;
+    else {
+      while (cursor < old.length && (used.has(old[cursor]) || keyOf(old[cursor]))) cursor++;
+      if (cursor < old.length) o = old[cursor];
+    }
+    if (o && !used.has(o) && sameKind(o, n)) { used.add(o); if (!k) cursor++; morphNode(o, n); return o; }
+    return n;
+  });
+  result.forEach((n, i) => { if (parent.childNodes[i] !== n) parent.insertBefore(n, parent.childNodes[i] || null); });
+  while (parent.childNodes.length > result.length) parent.lastChild.remove();
+}
+// When a beat first appeared, so a re-render resumes it rather than restarting it (beat3 rests after 3 cycles).
+const beatSeen = new Map();
+function beatStyle(key) {
+  if (!beatSeen.has(key)) beatSeen.set(key, Date.now());
+  return `--beat-at: -${Date.now() - beatSeen.get(key)}ms`;
+}
+const pcls = (pk) => NW.pattern.ensure(pk);
+const bead = (pk, size) => { NW.pattern.ensure(pk); return NW.pattern.bead(pk, size); };
+
+// ---- state ---------------------------------------------------------------------------------------
+const S = {
+  date: null,         // the day on screen
+  spot: null,         // pk in the spotlight (revealed days only)
+  hover: -1,          // word under the mouse
+  kb: -1, kbd: false, // keyboard cursor, and whether it is showing
+  pending: null,      // a word tapped while nameless: it becomes the first mark on commit
+  gate: { open: false, seq: 0, preview: null, busy: false, empty: true },
+  popover: false,
+  legend: false,
+};
+let ready = false, readyResolve = null;
+const readyP = new Promise((r) => { readyResolve = r; });
+let today = null, me = null, dv = null, K = 7;
+let LS = 'nw.', reduced = false, coarse = false, hadSk = false, libsMissing = false, rolled = null;
+let taughtV = 0;
+let bloom = null;       // { date, delays: Map<cls, ms>, butterAt } while the eye's bloom plays
+let syncBloom = null;   // { k, until } while synced marks fade in after a sign-in
+const arrived = new Set(), eyeBeat = new Set(), greetedPeers = new Set();
+let lastPeerOllu = 0, lastStack = new Set(), stackInit = false;
+const PROBE_SK = '0000000000000000000000000000000000000000000000000000000000000001';   // tells whether crypto loaded
+
+// localStorage, prefixed like net.js (nw. or nwm<dev>. in mock mode); every access wrapped
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(LS + k)); } catch { return null; } },
+  set(k, v) { try { if (v == null) localStorage.removeItem(LS + k); else localStorage.setItem(LS + k, JSON.stringify(v)); } catch {} },
+  has(k) { try { return localStorage.getItem(LS + k) != null; } catch { return false; } },
+};
+const setTaught = (n) => { if (n > taughtV) { taughtV = n; store.set('taught', n); } };
+const teeluDates = () => { const a = store.get('teelu'); return Array.isArray(a) ? a : []; };
+function addTeelu(date) {
+  const a = teeluDates().filter((d) => d !== date);
+  a.push(date);
+  store.set('teelu', a.slice(-400));
+}
+
+function safe(fn, fallback) { try { const v = fn(); return v === undefined ? fallback : v; } catch { return fallback; } }
+const FIRST_DAY = () => NW.text.FIRST_DAY;
+const getToday = () => (ready && safe(() => NW.net.today(), null)) || NW.text.dayKey(Date.now());
+function emptyView(date) {
+  const pg = NW.text.page(date);
+  return { date, tag: '', count: pg.count, hash: pg.hash, revealed: false, mine: null, others: [], authors: 0, butter: new Set() };
+}
+function dayView(date) {
+  if (!ready) return emptyView(date);
+  const v = safe(() => NW.net.day(date), null);
+  if (!v) return emptyView(date);
+  if (!v.others) v.others = [];
+  if (!v.butter) v.butter = new Set();
+  return v;
+}
+const used = () => K - (dv.mine ? dv.mine.left : K);
+const inkLeft = () => (dv.mine ? dv.mine.left : K);
+
+// ---- the page of words -------------------------------------------------------------------------------
+let P = null;   // { date, page, els[idx] (null for function words), st[idx], fresh, meet, hint }
+function buildPage(date, how) {
+  const pg = NW.text.page(date);
+  const root = $('page');
+  const paras = [0, 1, 2].map(() => document.createElement('p'));
+  const els = new Array(pg.count).fill(null);
+  let hint = -1;
+  for (const t of pg.tokens) {
+    const p = paras[t.p];
+    if (p.firstChild) p.append(' ');
+    if (!t.mk) {
+      p.append(h('span', { class: 'fw', text: t.s }));
+      if (t.end) p.append(t.end);
+      continue;
+    }
+    const w = h('span', { class: 'w', 'data-i': String(t.i) }, t.s, h('i', { class: 'f' }), h('i', { class: 'rb' }));
+    els[t.i] = w;
+    if (hint < 0 && t.p === 0 && t.t.length >= 4) hint = t.i;
+    p.append(t.end ? h('span', { class: 'nb' }, w, t.end) : w);
+  }
+  root.replaceChildren(...paras);
+  root.classList.remove('arrive', 'swap');
+  if (how) { void root.offsetWidth; root.classList.add(how); }
+  P = {
+    date, page: pg, els, hint, fresh: true, meet: null,
+    st: els.map((e) => e && { cls: 'w', fpat: '', rb: [], butter: false, mine: false, fx: new Set(), t: {} }),
+  };
+}
+
+/** A one-shot class on one word (spark, glow-in), kept across patches until it has played. */
+function fx(i, name, ms) {
+  if (!P || !P.st[i]) return;
+  const st = P.st[i], el = P.els[i], date = P.date;
+  if (st.fx.has(name)) { el.classList.remove(name); void el.offsetWidth; }
+  st.fx.add(name);
+  el.classList.add(name);
+  st.cls = el.className;
+  clearTimeout(st.t[name]);
+  st.t[name] = setTimeout(() => {
+    if (!P || P.date !== date || P.st[i] !== st) return;
+    st.fx.delete(name);
+    el.classList.remove(name);
+    st.cls = el.className;
+  }, ms);
+}
+const sparkWord = (date, i) => { if (P && P.date === date) fx(i, 'spark', 650); };
+
+function hintIdx() {
+  if (taughtV > 0 || S.spot || S.pending != null || (dv.mine && dv.mine.marks.size)) return -1;
+  return P ? P.hint : -1;
+}
+
+/** Ribbon segments for one word: reuse, grow the new ones, fade out the gone ones. */
+function patchRibbon(rb, want, live) {
+  const have = new Map();
+  for (const b of rb.children) if (!b.classList.contains('out')) have.set(b.getAttribute('data-c'), b);
+  const keep = [];
+  for (const c of want) {
+    let b = have.get(c);
+    if (b) have.delete(c);
+    else {
+      b = document.createElement('b');
+      b.className = c;
+      b.setAttribute('data-c', c);
+      if (live) {
+        b.classList.add('grow');
+        const d = bloom && bloom.delays.get(c);
+        if (d) b.style.setProperty('--d', d + 'ms');
+      }
+    }
+    keep.push(b);
+  }
+  for (const b of have.values()) {
+    b.classList.add('out');
+    setTimeout(() => b.remove(), reduced ? 0 : 170);
+    keep.push(b);
+  }
+  keep.forEach((b, k) => { if (rb.children[k] !== b) rb.insertBefore(b, rb.children[k] || null); });
+}
+
+function patchPage() {
+  if (!P || P.date !== S.date) return;
+  const root = $('page');
+  const rev = !!dv.revealed;
+  const marks = dv.mine ? dv.mine.marks : EMPTY_MAP;
+  const left = inkLeft();
+  const myCls = me ? pcls(me) : '';
+  let spot = rev && S.spot ? dv.others.find((o) => o.pk === S.spot) || null : null;
+  if (S.spot && !spot) S.spot = null;
+  const spotCls = spot ? pcls(spot.pk) : '';
+  if (spot) root.setAttribute('data-spot', ''); else root.removeAttribute('data-spot');
+  const rib = rev ? ribbonsOf(dv, pcls) : EMPTY_MAP;
+  const hint = hintIdx();
+  const kbOn = S.kbd && document.activeElement === root;
+  const live = !P.fresh;
+  if (syncBloom && Date.now() > syncBloom.until) syncBloom = null;
+  P.els.forEach((el, i) => {
+    if (!el) return;
+    const st = P.st[i];
+    const mine = marks.has(i);
+    const lit = !!spot && spot.marks.has(i);
+    const hov = S.hover === i && !!me && !spot;
+    const ghost = hov && !mine && left > 0;
+    const unmark = hov && mine;
+    const butter = rev && dv.butter.has(i);
+    let cls = 'w';
+    if (mine) cls += ' mine';
+    if (ghost) cls += ' ghost';
+    if (unmark) cls += ' unmark';
+    if (S.pending === i) cls += ' pending';
+    if (kbOn && S.kb === i) cls += ' kb';
+    if (butter) cls += ' butter';
+    if (lit) cls += ' lit';
+    if (hint === i) cls += ' hint beat3';
+    for (const f of st.fx) cls += ' ' + f;
+
+    // the fill keeps its last pattern while it fades out, so an unmark fades instead of blinking
+    const f = el.firstElementChild;
+    const pat = lit ? spotCls : mine || ghost || unmark ? myCls : '';
+    if (pat && pat !== st.fpat) { st.fpat = pat; f.className = 'f ' + pat; }
+    if (mine && !st.mine && live && syncBloom) {
+      f.style.transitionDelay = (syncBloom.k++ * 15) + 'ms';
+      setTimeout(() => { f.style.transitionDelay = ''; }, 1600);
+    }
+    if (hint === i) el.style.setProperty('--beat-at', beatStyle('hint').slice(11));
+    else if (st.hinted) el.style.removeProperty('--beat-at');
+    st.hinted = hint === i;
+
+    // a word entering butter fades in (after the ribbons while the bloom plays) and glows once
+    if (butter && !st.butter && live) {
+      const at = bloom ? bloom.butterAt : 0;
+      el.style.setProperty('--bd', at + 'ms');
+      st.fx.add('glow-in');
+      cls += ' glow-in';
+      clearTimeout(st.t['glow-in']);
+      st.t['glow-in'] = setTimeout(() => { st.fx.delete('glow-in'); el.classList.remove('glow-in'); el.style.removeProperty('--bd'); st.cls = el.className; }, at + 1300);
+    }
+    st.mine = mine;
+    st.butter = butter;
+    if (cls !== st.cls) { el.className = cls; st.cls = cls; }
+
+    const want = (rib.get(i) || EMPTY_LIST).slice(0, 4);
+    if (want.length !== st.rb.length || want.some((c, k) => c !== st.rb[k])) { patchRibbon(el.lastElementChild, want, live); st.rb = want; }
+  });
+  P.fresh = false;
+}
+const EMPTY_LIST = [];
+
+// ---- bar ---------------------------------------------------------------------------------------------
+function weekdayDots(date) {
+  const wd = NW.text.weekday(date);
+  return h('span', { class: 'wd', 'aria-hidden': 'true' }, DAYS.map((_, k) => h('i', { class: (k >= 5 ? 'we' : '') + (k === wd ? ' on' : '') })));
+}
+function renderBar() {
+  const prevOk = S.date > FIRST_DAY(), nextOk = S.date < today;
+  const roll = rolled && nextOk;
+  morph($('daynav'), [
+    h('button', {
+      type: 'button', class: 'round mirror' + (prevOk ? '' : ' inert'), 'data-k': 'prev',
+      'aria-label': 'Previous day', 'aria-disabled': prevOk ? null : 'true', onclick: () => step(-1),
+    }, icon('next')),
+    h('div', { class: 'date', 'data-k': 'date', role: 'img', 'aria-label': dateWords(S.date, today) },
+      h('span', { class: 'dn', text: dateNumerals(S.date, today) }), weekdayDots(S.date)),
+    h('button', {
+      type: 'button', class: 'round' + (nextOk ? '' : ' inert') + (roll ? ' beat3' : ''), 'data-k': 'next',
+      style: roll ? beatStyle('roll:' + rolled) : null,
+      'aria-label': S.date < today ? (roll ? 'Next day. A new page has begun.' : 'Next day') : 'Next day, this is today',
+      'aria-disabled': nextOk ? null : 'true', onclick: () => step(1),
+    }, icon('next')),
+  ]);
+
+  // the stack: live peers on this page at full strength, then other authors faded, then a numeral
+  const ppl = people(dv, ready ? safe(() => NW.net.peers(), []) : [], S.date, me);
+  const extra = Math.max(0, nAuthors(dv) - dv.others.length);
+  const shown = ppl.slice(0, 5), rest = ppl.length - shown.length + extra;
+  const stack = $('stack');
+  stack.hidden = !ppl.length && !extra;
+  const now = new Set();
+  const kids = shown.map((p) => {
+    const c = pcls(p.pk);
+    now.add(c);
+    const b = bead(p.pk, 18);
+    b.setAttribute('data-k', 'st-' + c);
+    if (!p.here) b.classList.add('away');
+    if (stackInit && !lastStack.has(c)) b.classList.add('arrive');
+    return b;
+  });
+  lastStack = now;
+  if (ready) stackInit = true;
+  if (rest > 0) kids.push(h('span', { class: 'n', 'data-k': 'n', text: String(rest) }));
+  morph(stack, kids);
+  const here = ppl.filter((p) => p.here).length, total = ppl.length + extra;
+  stack.setAttribute('aria-label', `${plural(total, 'other player', 'other players')} on this page${here ? `, ${here} here now` : ''}. Show the list.`);
+  stack.setAttribute('aria-expanded', String(S.popover));
+
+  // connection: ● online, ◌ connecting, ☾ offline (+ days not yet sent)
+  const c = ready ? safe(() => NW.net.conn(), null) || { state: 'off', unsent: 0 } : { state: 'wait', unsent: 0 };
+  const conn = $('conn');
+  const ck = c.state + ':' + (c.state === 'off' ? c.unsent : 0);
+  if (conn.dataset.k !== ck) {
+    conn.dataset.k = ck;
+    conn.dataset.state = c.state;
+    conn.replaceChildren(icon(c.state === 'on' ? 'done' : c.state === 'wait' ? 'routine' : 'rest'));
+    if (c.state === 'off' && c.unsent > 0) conn.append(h('span', { class: 'n', 'aria-hidden': 'true', text: String(c.unsent) }));
+    conn.setAttribute('aria-label', c.state === 'on' ? 'online' : c.state === 'wait' ? 'connecting'
+      : `offline${libsMissing ? ', the network libraries did not load; reading still works' : ''}${c.unsent > 0 ? `, ${plural(c.unsent, 'day', 'days')} of marks not sent yet` : ''}`);
+  }
+  $('save').hidden = !me || c.unsent > 0;
+  $('retry').hidden = !(libsMissing && c.state === 'off');
+}
+
+// ---- dock ----------------------------------------------------------------------------------------------
+const NAME_LABEL = 'Your name. It only sets your colour pattern and is never shown or stored. The same name on another device is the same player, with the same marks.';
+function gateNodes() {
+  const g = S.gate;
+  const pv = g.preview || (me && g.empty ? { pk: me } : null);
+  const cls = pv ? pcls(pv.pk) : '';
+  const beat = !me && S.pending != null;
+  let pvNode;
+  if (pv) { pvNode = bead(pv.pk, 26); pvNode.setAttribute('data-k', 'pv-' + cls); }
+  else pvNode = h('span', { class: 'chip-add', 'data-k': 'pv-none' });
+  return [h('form', {
+    class: 'gate' + (beat ? ' beat3' : ''), 'data-k': 'gate', novalidate: true, onsubmit: commit,
+    style: beat ? beatStyle(`gate:${S.date}:${S.pending}`) : null,
+  },
+  icon('me'),
+  h('input', {
+    id: 'name', 'data-k': 'name', class: cls || null, type: 'text', maxlength: '64',
+    autocomplete: 'off', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'done',
+    'aria-label': NAME_LABEL, oninput: onName,
+  }),
+  h('span', { class: 'pv' + (g.busy ? ' busy' : ''), 'data-k': 'pv', role: 'img', 'aria-label': pv ? 'the colour pattern for this name' : 'no pattern yet' },
+    pvNode, g.busy ? icon('routine') : null),
+  h('button', { type: 'submit', class: 'gbtn primary', 'data-k': 'commit', 'aria-label': 'Play with this name', disabled: g.empty || libsMissing }, icon('check')),
+  me ? h('button', { type: 'button', class: 'round', 'data-k': 'door', 'aria-label': 'Sign out on this device. Your marks stay with your name.', onclick: doSignOut }, icon('leave')) : null)];
+}
+function dockNodes() {
+  const myCls = pcls(me), u = used(), left = inkLeft();
+  const kids = [
+    h('button', { type: 'button', class: 'round me-btn', 'data-k': 'me', 'aria-label': 'Your colour pattern. Change name or sign out.', onclick: openGate },
+      bead(me, 30), h('span', { class: 'badge' }, icon('me'))),
+    h('span', { class: 'rail', 'data-k': 'rail', role: 'img', 'aria-label': `${u} of ${K} marks used` },
+      Array.from({ length: K }, (_, k) => h('i', { class: k < u ? 'spent ' + myCls : null }))),
+  ];
+  if (!dv.revealed) {
+    const n = nAuthors(dv);
+    const primary = u >= 3 || left === 0;
+    if (primary) eyeBeat.add(S.date);
+    const beat = primary && eyeBeat.has(S.date);
+    kids.push(h('button', {
+      type: 'button', class: 'gbtn eye' + (primary ? ' primary' : '') + (beat ? ' beat3' : ''), 'data-k': 'eye',
+      style: beat ? beatStyle('eye:' + S.date) : null, onclick: reveal,
+      'aria-label': `Reveal everyone's marks on this page${n ? `. ${plural(n, 'other player', 'other players')} marked it` : ''}`,
+    }, icon('eye'), h('span', { class: 'num', 'aria-hidden': 'true', text: n ? String(n) : '' })));
+  }
+  return kids;
+}
+function renderDock() {
+  const dock = $('dock');
+  const a = document.activeElement;
+  const focusK = a && dock.contains(a) ? a.getAttribute('data-k') : null;
+  if (!ready && hadSk && !me) morph(dock, [h('span', { class: 'wait', 'data-k': 'wait', role: 'img', 'aria-label': 'loading' }, icon('dots'))]);
+  else if (!me || S.gate.open) morph(dock, gateNodes());
+  else morph(dock, dockNodes());
+  // focus: morph keeps a surviving control focused; if it went away (the eye after a reveal), land somewhere sensible
+  const b = document.activeElement;
+  if (focusK && (!b || b === document.body || !b.isConnected)) {
+    const f = dock.querySelector(`[data-k="${focusK}"]`) || $('page');
+    f.focus({ preventScroll: true });
+  }
+}
+function wobble() {
+  const r = $('dock').querySelector('.rail');
+  if (!r) return;
+  r.classList.remove('wob');
+  void r.offsetWidth;
+  r.classList.add('wob');
+  setTimeout(() => r.classList.remove('wob'), 320);
+}
+
+// ---- the name gate -------------------------------------------------------------------------------------
+let nameTimer = 0, committing = false;
+const waitPk = async (sk) => { if (!ready) await readyP; return NW.net.derivePublicKey(sk); };
+function onName(e) {
+  const raw = e.target.value;
+  const norm = NW.pattern.normalizeName(raw);
+  S.gate.empty = !raw.trim();
+  clearTimeout(nameTimer);
+  const seq = ++S.gate.seq;
+  if (!norm) { S.gate.preview = null; S.gate.busy = false; return queueRender(); }
+  S.gate.busy = true;
+  queueRender();
+  nameTimer = setTimeout(() => derive(norm, seq), 300);
+}
+async function derive(norm, seq) {
+  let pv = null;
+  try {
+    const sk = await NW.pattern.deriveSecret(norm);
+    if (seq !== S.gate.seq) return;
+    const pk = await waitPk(sk);
+    if (seq !== S.gate.seq) return;
+    pv = pk ? { pk, sk, seq } : null;
+  } catch {}
+  if (seq !== S.gate.seq) return;   // a newer keystroke owns the preview now
+  S.gate.preview = pv;
+  S.gate.busy = false;
+  render();
+}
+async function commit(e) {
+  if (e) e.preventDefault();
+  const input = $('name');
+  if (committing || !input) return;
+  const norm = NW.pattern.normalizeName(input.value);
+  if (!norm) return;
+  committing = true;
+  try {
+    let pv = S.gate.preview && S.gate.preview.seq === S.gate.seq && !S.gate.busy ? S.gate.preview : null;
+    if (!pv) {
+      clearTimeout(nameTimer);
+      const seq = ++S.gate.seq;
+      S.gate.busy = true;
+      render();
+      const sk = await NW.pattern.deriveSecret(norm);
+      const pk = await waitPk(sk);
+      if (!pk || seq !== S.gate.seq) throw new Error('no key');
+      pv = { pk, sk, seq };
+    }
+    const pvEl = $('dock').querySelector('.pv');
+    const from = pvEl ? pvEl.getBoundingClientRect() : null;
+    await NW.net.signIn(pv.sk);
+    input.value = '';
+    input.blur();
+    S.gate = { open: false, seq: S.gate.seq + 1, preview: null, busy: false, empty: true };
+    syncBloom = reduced ? null : { k: 0, until: Date.now() + 1500 };
+    render();
+    // the bead slides from the gate into its dock slot
+    const btn = $('dock').querySelector('.me-btn');
+    if (btn && from && !reduced) {
+      const to = btn.getBoundingClientRect();
+      btn.style.setProperty('--sx', (from.left + from.width / 2 - to.left - to.width / 2) + 'px');
+      btn.style.setProperty('--sy', (from.top + from.height / 2 - to.top - to.height / 2) + 'px');
+      btn.classList.add('slide');
+      setTimeout(() => btn.classList.remove('slide'), 340);
+    }
+    if (btn) btn.focus({ preventScroll: true });
+    if (S.pending != null) {
+      const i = S.pending;
+      S.pending = null;
+      if (!(dv.mine && dv.mine.marks.has(i))) markWord(i, true);
+    }
+    announce('You are in. Your colour pattern is set.');
+  } catch {
+    S.gate.busy = false;
+  } finally {
+    committing = false;
+    render();
+  }
+}
+function openGate() {
+  S.gate = { open: true, seq: S.gate.seq + 1, preview: null, busy: false, empty: true };
+  render();
+  focusName();
+}
+function closeGate() {
+  const input = $('name');
+  if (input) input.value = '';
+  clearTimeout(nameTimer);
+  S.gate = { open: false, seq: S.gate.seq + 1, preview: null, busy: false, empty: true };
+  render();
+  const b = $('dock').querySelector('.me-btn');
+  if (b) b.focus({ preventScroll: true });
+}
+function doSignOut() {
+  safe(() => NW.net.signOut());
+  S.spot = null;
+  S.gate = { open: false, seq: S.gate.seq + 1, preview: null, busy: false, empty: true };
+  announce('Signed out on this device.');
+  render();
+  focusName();
+}
+const focusName = () => { const i = $('name'); if (i) i.focus({ preventScroll: true }); };
+
+// ---- marking and revealing ---------------------------------------------------------------------------
+function markWord(i, on) {
+  const ok = safe(() => NW.net.mark(S.date, i, on), false);
+  if (!ok && on) wobble();
+  return ok;
+}
+function tap(i) {
+  if (!P) return;
+  const t = P.page.tokens[i];
+  if (!t || !t.mk) return;
+  if (!me) {
+    if (!ready && hadSk) return;   // the stored identity is still loading
+    S.pending = i;
+    render();
+    focusName();
+    return;
+  }
+  const mine = !!(dv.mine && dv.mine.marks.has(i));
+  if (mine) markWord(i, false);
+  else if (inkLeft() > 0) markWord(i, true);
+  else wobble();   // no ink: the rail wobbles, nothing else
+  render();
+  if (S.kbd) announce(wordText(t, P.page.count, dv));
+}
+function reveal() {
+  if (!P || dv.revealed) return;
+  const date = S.date;
+  const page = $('page');
+  const hadFocus = $('dock').contains(document.activeElement);
+  safe(() => NW.net.reveal(date));
+  const after = dayView(date);
+  if (!after.revealed) return;
+  const n = after.others.length;
+  const lastRibbon = n ? (n - 1) * 150 + 320 : 0;
+  bloom = reduced ? null : { date, delays: new Map(after.others.map((o, j) => [pcls(o.pk), j * 150])), butterAt: lastRibbon };
+  render();
+  if (hadFocus) page.focus({ preventScroll: true });
+  announce(n ? `Revealed. ${plural(n, 'other player', 'other players')} marked this page.` : 'Revealed. Nobody else has marked this page yet.');
+  setTimeout(() => {
+    if (bloom && bloom.date === date) bloom = null;
+    render();   // teelu is evaluated now, after the butter has faded in
+    if (taughtV < 3) { setTaught(3); flash($('legend-btn')); }
+  }, reduced ? 0 : lastRibbon + 200);
+}
+
+// ---- moments: the bubble, pulses, teelu ------------------------------------------------------------------
+function flash(el) {
+  if (!el) return;
+  el.classList.remove('pulse');
+  void el.getBoundingClientRect();
+  el.classList.add('pulse');
+  setTimeout(() => el.classList.remove('pulse'), 700);
+}
+const bub = { cur: null, shownAt: 0, queue: [], last: new Map(), timer: 0 };
+/** One bubble at a time; a new one waits until the current one has shown for 1.2 s; the same one never repeats within 8 s. */
+function say(key, parts) {
+  if ((bub.last.get(key) || 0) > Date.now() - 8000) return;
+  if (bub.queue.some((q) => q.key === key)) return;
+  bub.queue.push({ key, parts });
+  pump();
+}
+function pump() {
+  if (!bub.queue.length) return;
+  const since = Date.now() - bub.shownAt;
+  if (bub.cur && since < 1200) { clearTimeout(bub.timer); bub.timer = setTimeout(pump, 1200 - since); return; }
+  const next = bub.queue.shift();
+  bub.last.set(next.key, Date.now());
+  if (bub.cur) bub.cur.remove();
+  const b = h('div', { class: 'bubble', 'aria-hidden': 'true' }, next.parts());
+  $('world').appendChild(b);
+  bub.cur = b;
+  bub.shownAt = Date.now();
+  setTimeout(() => { if (bub.cur === b) { b.remove(); bub.cur = null; } pump(); }, 2900);
+}
+function announce(text) {
+  const s = $('say');
+  s.textContent = '';
+  requestAnimationFrame(() => { s.textContent = text; });
+}
+function greetPeer(pk) {
+  if (!pk || pk === me || greetedPeers.has(pk)) return;
+  greetedPeers.add(pk);
+  if (S.date !== today || Date.now() - lastPeerOllu < 30000) return;
+  lastPeerOllu = Date.now();
+  say('ollu:' + pcls(pk), () => ['ollu', bead(pk, 16)]);
+  announce('ollu: another player just arrived on today’s page.');
+}
+/** After each render: first-run progress, teelu once per date, and sparks on later meetings. */
+function moments() {
+  if (!ready || !P || P.date !== S.date) return;
+  if (taughtV === 0 && dv.mine && dv.mine.marks.size) setTaught(1);
+  if (bloom) return;
+  if (!dv.revealed) { P.meet = null; return; }
+  const date = S.date, meet = meetings(dv);
+  if (!teeluDates().includes(date)) {
+    const hits = teeluHits(dv);
+    if (hits.length) {
+      addTeelu(date);
+      say('teelu', () => ['teelu', icon('sparkle', 'spark')]);
+      announce('teelu: someone else marked a word you chose before revealing.');
+      hits.forEach((i, k) => setTimeout(() => sparkWord(date, i), reduced ? 0 : k * 120));
+      queueSky();
+    }
+  } else if (P.meet) {
+    const fresh = new Set();
+    for (const m of meet) if (!P.meet.has(m)) fresh.add(+m.slice(0, m.indexOf(':')));
+    for (const i of fresh) sparkWord(date, i);
+  }
+  P.meet = meet;
+}
+
+// ---- popover ---------------------------------------------------------------------------------------------
+function renderPopover() {
+  const pop = $('popover');
+  if (!S.popover) { pop.hidden = true; return; }
+  const rev = !!dv.revealed;
+  const ppl = people(dv, ready ? safe(() => NW.net.peers(), []) : [], S.date, me);
+  if (!ppl.length) { S.popover = false; pop.hidden = true; return; }
+  pop.hidden = false;
+  const r = $('stack').getBoundingClientRect();
+  pop.style.top = Math.round(r.bottom + 8) + 'px';
+  pop.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + 'px';
+  morph(pop, ppl.map((p) => {
+    const c = pcls(p.pk), on = S.spot === p.pk;
+    const words = [p.here ? 'a player here now' : 'a player', plural(p.marks, 'mark', 'marks')];
+    if (rev && p.marks) words.push(on ? 'shown alone, press again to show everyone' : 'press to show only their marks');
+    else if (!rev) words.push('their marks are hidden until you reveal');
+    return h('button', {
+      type: 'button', class: 'prow' + (rev && p.marks ? '' : ' veiled') + (on ? ' on' : ''), 'data-k': 'row-' + c,
+      'aria-disabled': rev && p.marks ? null : 'true', 'aria-pressed': rev && p.marks ? String(on) : null,
+      'aria-label': words.join(', '), onclick: () => toggleSpot(p),
+    }, h('span', { class: 'ring' }, bead(p.pk, 26)), p.here ? h('span', { class: 'live' }) : null,
+    h('span', { class: 'num', 'aria-hidden': 'true', text: p.marks ? String(p.marks) : '' }));
+  }));
+}
+function toggleSpot(p) {
+  if (!dv.revealed || !p.marks) return;
+  S.spot = S.spot === p.pk ? null : p.pk;
+  render();
+}
+
+// ---- legend (Five Beads lg-panel structure; samples use real words from today's page) -------------------
+const SAMPLE = [
+  '7c1e4a9b2d5f8c3e6a1b4d7f0c2e5a8b3d6f9c1e4a7b0d3f6c9e2a5b8d1f4c7e',
+  'b24f8e1a6c3d9f5b2e8a4c7d1f6b3e9a5c2d8f4b1e7a3c6d9f2b5e8a1c4d7f0b',
+  '3e9a5c2d8f4b1e7a3c6d9f2b5e8a1c4d7f0b3e6a9c2d5f8b1e4a7c0d3f6b9e2a',
+];
+let legendOpener = null, legendPinned = false;
+function buildLegend() {
+  const lead = () => h('span', { class: 'lead' });
+  const row = (...kids) => h('div', { class: 'lg-row' }, kids);
+  const panel = (sentence, ...rows) => h('div', { class: 'lg-panel' }, h('p', { class: 'sr-only', text: sentence }), rows);
+  const you = me || SAMPLE[0], a = SAMPLE[1], b = SAMPLE[2];
+  const youC = pcls(you), aC = pcls(a), bC = pcls(b), cC = pcls(SAMPLE[0] === you ? SAMPLE[2] : SAMPLE[0]);
+  const toks = NW.text.page(today).tokens.filter((t) => t.k === 'c' && t.t.length <= 7);
+  const words = [...new Set(toks.map((t) => t.t))];
+  const W = (k) => words[k % Math.max(1, words.length)] || 'lune';
+  const word = (text, o = {}) => h('span', { class: 'lg-text' },
+    h('span', { class: 'w' + (o.cls ? ' ' + o.cls : '') }, text,
+      h('i', { class: 'f' + (o.pat ? ' ' + o.pat : '') }),
+      h('i', { class: 'rb' }, (o.rb || []).map((c) => h('b', { class: c })))));
+  const rail = (n, c) => h('span', { class: 'rail' }, Array.from({ length: K }, (_, k) => h('i', { class: k < n ? 'spent ' + c : null })));
+  const meBead = () => h('span', { class: 'me-btn' }, bead(you, 26), h('span', { class: 'badge' }, icon('me')));
+
+  const A = panel(`Tap a word to mark it in your pattern; tap it again to unmark it. You have ${K} marks a day, shown as ${K} dots.`,
+    row(word(W(0)), icon('next'), word(W(0), { cls: 'mine', pat: youC })),
+    row(word(W(1), { cls: 'mine', pat: youC }), icon('next'), word(W(1))),
+    row(rail(3, youC)));
+  const B = panel('The eye reveals everyone’s marks; its number counts the other players who marked the page. Each player’s marks show as a ribbon under the word, in their pattern. The words most people marked glow butter. If a word you marked before revealing was marked by someone else too, the bubble says teelu.',
+    row(h('span', { class: 'lg-btn' }, icon('eye')), h('span', { text: '3' }), icon('next'), word(W(2), { rb: [aC, bC, cC] })),
+    row(word(W(3), { rb: [aC] }), lead(), bead(a, 18)),
+    row(word(W(4), { cls: 'butter' }), icon('sparkle', 'butter')));
+  const C = panel('Your pattern comes from your name and carries a small figure. Players on this page right now show at full strength, players who marked it earlier are faded. Pick a player from the list to see only their marks.',
+    row(meBead()),
+    row(bead(a, 22), lead(), h('span', { class: 'half' }, bead(b, 22))),
+    row(h('span', { class: 'lg-ring' }, bead(a, 22)), icon('next'), word(W(5), { cls: 'mine', pat: aC })));
+  const D = panel('The arrows step between days. Type any name to get its pattern, and the check starts playing; the same name on another device is the same player. The door signs out. A filled dot means online, a dashed ring connecting, a moon offline; the peach dot means your marks are saved.',
+    row(h('span', { class: 'mirror' }, icon('next', 'flip')), h('span', { text: dateNumerals(today, today) }), icon('next')),
+    row(icon('me'), h('span', { class: 'lg-line' }), h('span', { class: 'chip-add' }), h('span', { class: 'lg-btn' }, icon('check'))),
+    row(icon('leave'), icon('next'), h('span', { class: 'chip-add' })),
+    row(icon('done', 'mint'), icon('routine', 'lg-spin'), icon('rest'), h('span', { class: 'save' })));
+  const flip = D.querySelector('.flip');
+  if (flip) flip.style.transform = 'scaleX(-1)';
+  $('legend').replaceChildren(A, B, C, D);
+}
+function openLegend(pinned, opener) {
+  const el = $('legend');
+  if (el.hidden) buildLegend();
+  el.hidden = false;
+  S.legend = true;
+  legendPinned = pinned;
+  legendOpener = opener || null;
+  $('legend-scrim').hidden = !pinned;
+  $('legend-btn').setAttribute('aria-expanded', 'true');
+  if (pinned) { el.setAttribute('aria-modal', 'true'); el.focus(); } else el.removeAttribute('aria-modal');
+}
+function closeLegend() {
+  const el = $('legend');
+  if (el.hidden) return;
+  el.hidden = true;
+  S.legend = false;
+  el.removeAttribute('aria-modal');
+  $('legend-scrim').hidden = true;
+  $('legend-btn').setAttribute('aria-expanded', 'false');
+  if (legendOpener && legendOpener.isConnected) legendOpener.focus({ preventScroll: true });
+  legendOpener = null;
+}
+
+// ---- render -------------------------------------------------------------------------------------------------
+let statusSaid = '';
+let rendering = false, renderAgain = false, rq = 0;
+function render() {
+  if (rendering) { renderAgain = true; return; }
+  rendering = true;
+  try {
+    today = getToday();
+    me = ready ? safe(() => NW.net.me(), null) : null;
+    dv = dayView(S.date);
+    if (!P || P.date !== S.date) buildPage(S.date, '');
+    patchPage();
+    renderBar();
+    renderDock();
+    renderPopover();
+    const st = statusText(dv, { named: !!me, K, today });
+    if (st !== statusSaid) { statusSaid = st; $('status').textContent = st; }
+  } finally { rendering = false; }
+  if (renderAgain) { renderAgain = false; render(); return; }
+  moments();
+}
+// bursts of 'day' events (a relay's backlog) fold into one patch per frame; a timer backs the frame up,
+// since some hosts (a hidden webview, an embedded pane) stop frames while still reporting the page visible
+let rqTimer = 0;
+function queueRender() {
+  if (rq) return;
+  const run = () => { cancelAnimationFrame(rq); clearTimeout(rqTimer); rq = 0; render(); };
+  rq = requestAnimationFrame(run);
+  rqTimer = setTimeout(run, 250);
+}
+
+// ---- days ---------------------------------------------------------------------------------------------------
+function hashDate() {
+  const m = /^#(\d{4}-\d{2}-\d{2})$/.exec(location.hash);
+  const d = m && m[1];
+  return d && NW.text.isDate(d) && d >= FIRST_DAY() && d <= getToday() ? d : null;
+}
+function goDay(date) {
+  today = getToday();
+  if (!NW.text.isDate(date) || date < FIRST_DAY() || date > today || date === S.date) return;
+  S.date = date;
+  Object.assign(S, { spot: null, pending: null, hover: -1, kb: -1, popover: false });
+  bloom = null;
+  if (ready) safe(() => NW.net.view(date));
+  const url = location.pathname + location.search + (date === today ? '' : '#' + date);
+  try { history.replaceState(history.state, '', url); } catch {}
+  buildPage(date, arrived.has(date) ? 'swap' : 'arrive');
+  arrived.add(date);
+  window.scrollTo(0, 0);
+  render();
+}
+const step = (dir) => goDay(NW.text.addDays(S.date, dir));
+
+// ---- input ----------------------------------------------------------------------------------------------------
+function wordRects() {
+  const out = [];
+  if (!P) return out;
+  P.els.forEach((el, i) => {
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    out.push({ i, left: r.left, right: r.right, top: r.top, bottom: r.bottom });
+  });
+  return out;
+}
+function setHover(i) {
+  if (i === S.hover) return;
+  S.hover = i;
+  patchPage();
+}
+/** Keeps the keyboard cursor between the bar and the dock. */
+function ensureVisible(el) {
+  const r = el.getBoundingClientRect();
+  const top = $('bar').getBoundingClientRect().bottom + 8;
+  const bottom = $('dock').getBoundingClientRect().top - 8;
+  if (r.top < top) window.scrollBy(0, r.top - top);
+  else if (r.bottom > bottom) window.scrollBy(0, r.bottom - bottom);
+}
+const typing = (t) => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+function nextMarkable(from, dir) {
+  const n = P.els.length;
+  for (let i = from < 0 ? (dir > 0 ? 0 : n - 1) : from + dir; i >= 0 && i < n; i += dir) if (P.els[i]) return i;
+  return from;
+}
+function onEsc() {
+  if (!$('legend').hidden) return closeLegend();
+  if (S.popover) { S.popover = false; render(); $('stack').focus({ preventScroll: true }); return; }
+  if (me && S.gate.open) return closeGate();
+  if (S.spot) { S.spot = null; return render(); }
+  if (S.pending != null) { S.pending = null; return render(); }
+  if (taughtV < 3) { setTaught(taughtV === 0 ? 1 : 3); render(); }   // Esc skips a first-run beat
+}
+
+function wire() {
+  const page = $('page'), sheet = $('sheet');
+  // Taps arrive as clicks: the browser only fires one for a tap, never for a scroll, and touch-action: manipulation
+  // drops the double-tap delay. The whole sheet listens so a tap a little outside a word's box still lands.
+  sheet.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t.closest || t.closest('.fw')) return;   // function words are inert
+    let w = t.closest('.w');
+    if (w && !page.contains(w)) w = null;
+    let i = w ? +w.getAttribute('data-i') : nearestWord(wordRects(), e.clientX, e.clientY);
+    if (i < 0) { if (S.spot) { S.spot = null; render(); } return; }
+    S.kbd = false;
+    S.kb = i;
+    tap(i);
+  });
+  page.addEventListener('contextmenu', (e) => e.preventDefault());
+  page.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const w = e.target.closest && e.target.closest('.w');
+    setHover(w ? +w.getAttribute('data-i') : -1);
+  });
+  page.addEventListener('pointerleave', () => setHover(-1));
+  page.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || !P) return;
+    let i = S.kb;
+    switch (e.key) {
+      case 'ArrowRight': i = nextMarkable(i, 1); break;
+      case 'ArrowLeft': i = nextMarkable(i, -1); break;
+      case 'ArrowDown': case 'ArrowUp': {
+        if (i < 0) { i = nextMarkable(-1, 1); break; }
+        const j = lineStep(wordRects(), i, e.key === 'ArrowDown' ? 1 : -1);
+        if (j >= 0) i = j;
+        break;
+      }
+      case 'Enter': case ' ':
+        e.preventDefault();
+        if (S.kb >= 0) { S.kbd = true; tap(S.kb); }
+        return;
+      default: return;
+    }
+    e.preventDefault();
+    if (i < 0 || !P.els[i]) return;
+    S.kb = i;
+    S.kbd = true;
+    ensureVisible(P.els[i]);
+    announce(wordText(P.page.tokens[i], P.page.count, dv));
+    patchPage();
+  });
+  page.addEventListener('focus', () => {
+    S.kbd = page.matches(':focus-visible');
+    if (S.kb < 0 && P) S.kb = P.hint >= 0 ? P.hint : nextMarkable(-1, 1);
+    patchPage();
+  });
+  page.addEventListener('blur', () => { S.kbd = false; patchPage(); });
+
+  $('stack').addEventListener('click', () => { S.popover = !S.popover; render(); });
+  // a press outside the popover closes it; on click, so the press that closes it still lands where it was aimed
+  document.addEventListener('click', (e) => {
+    if (!S.popover) return;
+    const t = e.target;
+    if ($('popover').contains(t) || $('stack').contains(t)) return;
+    S.popover = false;
+    render();
+  }, true);
+  $('retry').addEventListener('click', () => location.reload());
+  $('legend-btn').addEventListener('click', (e) => { if ($('legend').hidden || !legendPinned) openLegend(true, e.currentTarget); else closeLegend(); });
+  $('legend-scrim').addEventListener('click', closeLegend);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') return onEsc();
+    // the pinned legend is modal: it covers the controls, so Tab stays on it
+    if (e.key === 'Tab' && legendPinned && !$('legend').hidden) { e.preventDefault(); $('legend').focus(); return; }
+    if (typing(e.target)) return;
+    if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); step(e.key === 'ArrowLeft' ? -1 : 1); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if ((e.key === 'e' || e.key === 'E') && !e.repeat) { e.preventDefault(); reveal(); return; }
+    if (e.key === '?' && !e.repeat && $('legend').hidden) openLegend(false, document.activeElement);
+  });
+  document.addEventListener('keyup', (e) => {
+    if ((e.key === '?' || e.key === '/' || e.key === 'Shift') && !legendPinned) closeLegend();
+  });
+  window.addEventListener('hashchange', () => { const d = hashDate(); goDay(d || getToday()); });
+
+  // the dock rides above the on-screen keyboard: iOS keeps the layout viewport, so follow the visual one
+  const vv = window.visualViewport;
+  if (vv) {
+    const follow = () => {
+      const off = coarse ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+      $('dock').style.setProperty('--kb', off + 'px');
+    };
+    vv.addEventListener('resize', follow);
+    vv.addEventListener('scroll', follow);
+  }
+  window.addEventListener('resize', () => { queueSky(); if (S.popover) renderPopover(); });
+  if (window.ResizeObserver) new ResizeObserver(queueSky).observe($('sheet'));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueSky);
+}
+
+// ---- the sky: gradient, stars, and the coil of your days ---------------------------------------------------
+function seeded(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+let skyPat = null, skyPatPk = null;
+async function paintSky() {
+  const c = $('sky');
+  const ctx = c.getContext('2d');
+  if (!ctx) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  const wide = W >= 900;
+  if (wide && me && skyPatPk !== me) {
+    const pk = me;
+    // canvasPattern resolves null when the tile fails to load; leave skyPatPk unset then, so the next paint retries
+    try { skyPat = await NW.pattern.canvasPattern(ctx, pk); skyPatPk = skyPat ? pk : null; } catch { skyPat = null; skyPatPk = null; }
+  }
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.round(W * dpr);
+  c.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const css = getComputedStyle(document.documentElement);
+  const T = (n) => css.getPropertyValue(n).trim();
+  // the hearth is the sheet's centre (as laid out at the top of the page), held inside the viewport
+  const sr = $('sheet').getBoundingClientRect();
+  const cx = sr.left + sr.width / 2;
+  const cy = Math.max(H * 0.3, Math.min(H / 2, sr.top + window.scrollY + sr.height / 2));
+  const TAU = Math.PI * 2;
+
+  const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.hypot(W, H) * 0.7);
+  bg.addColorStop(0, T('--dusk-glow'));
+  bg.addColorStop(0.45, T('--dusk-0'));
+  bg.addColorStop(1, T('--dusk-deep'));
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  if (wide) {
+    // one Archimedean coil, 28 beads a turn: bead k is today − k days, today at 3 o'clock, older days counter-clockwise
+    const STEP = TAU / 28, P0 = 34, R0 = sr.width / 2 + 48;
+    const maxR = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + 24;
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = T('--line');
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let t = 0; ; t += STEP / 4) {
+      const r = R0 + (P0 * t) / TAU;
+      if (r > maxR) break;
+      const x = cx + r * Math.cos(-t), y = cy + r * Math.sin(-t);
+      if (t === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    const hist = ready && me ? safe(() => NW.net.history(), null) || new Map() : new Map();
+    const teelu = new Set(teeluDates());
+    const pal = { faint: T('--ink-faint'), butter: T('--butter'), rose: T('--rose') };
+    const t0 = getToday(), first = FIRST_DAY();
+    for (let k = 0; ; k++) {
+      const t = k * STEP, r = R0 + (P0 * t) / TAU;
+      if (r > maxR) break;
+      const a = -t, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+      if (x < -20 || y < -20 || x > W + 20 || y > H + 20) continue;
+      const date = NW.text.addDays(t0, -k);
+      const fade = Math.max(0.35, 1 - ((r - R0) / (maxR - R0 + 1)) * 0.6);
+      const played = date >= first && hist.has(date);
+      ctx.beginPath();
+      if (played && skyPat) { ctx.globalAlpha = 0.9 * fade; ctx.fillStyle = skyPat; ctx.arc(x, y, 4.5, 0, TAU); }
+      else { ctx.globalAlpha = (date < first ? 0.25 : 0.42) * fade; ctx.fillStyle = pal.faint; ctx.arc(x, y, 1.4, 0, TAU); }
+      ctx.fill();
+      if (date < first) continue;
+      if (teelu.has(date)) {
+        ctx.globalAlpha = 0.8 * fade;
+        ctx.beginPath();
+        ctx.fillStyle = pal.butter;
+        ctx.arc(x + Math.cos(a) * 10, y + Math.sin(a) * 10, 2, 0, TAU);
+        ctx.fill();
+      }
+      if (k === 0) {
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.strokeStyle = pal.rose;
+        ctx.lineWidth = 1.5;
+        ctx.arc(x, y, 5, 0, TAU);
+        ctx.stroke();
+      }
+    }
+  }
+  // a few faint stars, on every screen
+  const stars = seeded(0x5eed);
+  for (let i = 0; i < 90; i++) {
+    const x = stars() * W, y = stars() * H, r = 0.45 + stars() * 0.75, a = 0.12 + stars() * 0.3, t = stars();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = t < 0.1 ? T('--butter') : t < 0.2 ? T('--lilac') : T('--ink-dim');
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+let skyQueued = false;
+function queueSky() {
+  if (skyQueued) return;
+  skyQueued = true;
+  requestAnimationFrame(() => { skyQueued = false; paintSky(); });
+}
+
+// ---- boot ---------------------------------------------------------------------------------------------------
+function buildStatic() {
+  // the mark: three rounded bars, the middle one in peach/lilac stripes
+  const mark = $('mark');
+  const defs = svgEl('defs', null, mark);
+  const pat = svgEl('pattern', { id: 'nw-mark-stripes', width: 4, height: 4, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  svgEl('rect', { width: 4, height: 4, style: 'fill: var(--lilac)' }, pat);
+  svgEl('rect', { width: 2, height: 4, style: 'fill: var(--peach)' }, pat);
+  svgEl('rect', { y: 2.25, width: 26, height: 3.5, rx: 1.75, class: 'b' }, mark);
+  svgEl('rect', { y: 8.25, width: 34, height: 3.5, rx: 1.75, fill: 'url(#nw-mark-stripes)' }, mark);
+  svgEl('rect', { y: 14.25, width: 20, height: 3.5, rx: 1.75, class: 'b' }, mark);
+  $('legend-btn').replaceChildren(icon('question'));
+  $('retry').replaceChildren(icon('retry'));
+}
+function listen() {
+  const on = (type, fn) => { try { NW.net.on(type, fn); } catch {} };
+  on('day', (e) => { if (!e || e.date === S.date) queueRender(); });
+  on('peers', (e) => {
+    for (const pk of (e && e.joined) || []) greetPeer(pk);
+    queueRender();
+  });
+  on('conn', queueRender);
+  on('ack', () => flash($('save')));
+  on('history', () => { queueSky(); queueRender(); });
+  on('identity', () => { S.spot = null; queueRender(); queueSky(); });
+  // a new day began while this page is open: the page stays, › beats
+  on('today', (e) => { rolled = (e && e.date) || getToday(); queueRender(); queueSky(); });
+}
+async function boot() {
+  const q = new URLSearchParams(location.search);
+  // the same prefix rule as net.js start(): dev is reduced to [0-9a-z], at most 8 characters
+  LS = q.has('mock') ? 'nwm' + (q.get('dev') || '').replace(/[^0-9a-z]/gi, '').slice(0, 8) + '.' : 'nw.';
+  reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  coarse = matchMedia('(pointer: coarse)').matches;
+  hadSk = store.has('sk');
+  taughtV = Math.max(0, Math.min(3, +store.get('taught') || 0));
+  K = (NW.sheet && NW.sheet.K) || (NW.C && NW.C.K) || 7;
+  buildStatic();
+  // the text first: it needs nothing from the network
+  today = getToday();
+  S.date = hashDate() || today;
+  buildPage(S.date, 'arrive');
+  arrived.add(S.date);
+  wire();
+  render();
+  paintSky();
+  if (q.has('debug')) window.__nwApp = { S, render, get dv() { return dv; }, get P() { return P; } };
+
+  try { await NW.net.start(); } catch {}
+  ready = true;
+  readyResolve();
+  listen();
+  today = getToday();
+  const d = hashDate() || today;
+  if (d !== S.date) { S.date = d; buildPage(d, 'swap'); }
+  if (P) P.fresh = true;   // what the local replica already holds appears with the page, without growing
+  safe(() => NW.net.view(S.date));
+  try { libsMissing = (await NW.net.derivePublicKey(PROBE_SK)) == null; } catch { libsMissing = true; }
+  if (taughtV === 0 && safe(() => NW.net.history().size, 0) > 0) setTaught(1);   // a returning player on a new browser
+  render();
+  queueSky();
+  if (S.gate.preview == null && !S.gate.empty) { const i = $('name'); if (i) onName({ target: i }); }   // typed before crypto loaded
+  if (store.get('greet') !== today) {
+    store.set('greet', today);
+    setTimeout(() => { say('ollu', () => ['ollu']); announce('ollu, a new page of noise words.'); }, 900);
+  }
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+})();
+</script>
+</body>
+</html>
