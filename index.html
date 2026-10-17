@@ -251,8 +251,8 @@ button { font: inherit; color: inherit; }
   text-wrap: pretty; overflow-wrap: anywhere;
   color: var(--ink);
   touch-action: pan-y pinch-zoom;   /* vertical scroll and pinch stay native; a horizontal start is a stroke (§7.5) */
-  user-select: none; -webkit-user-select: none;
-  -webkit-touch-callout: none;
+  /* the text selects and copies like any text: a mouse drag or double-click, a long-press on a phone (§7.6) */
+  user-select: text; -webkit-user-select: text;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-drag: none;
 }
@@ -2529,7 +2529,21 @@ function scrollSpeed(y, y0, top, bottom, Z = 48) {
   return 0;
 }
 
-NW.app = Object.freeze({ dateNumerals, dateWords, nAuthors, ribbonsOf, teeluHits, meetings, people, nearestWord, lineStep, statusText, wordText, rangeOf, strokePlan, undoPlan, undoFit, pressMove, scrollSpeed, boot });
+/** What a click means now that the text selects like any text (§7.6): 'revert' for the second click of a double-click
+ *  whose first click (the click just before it, seq − 1) made the last toggle (the double-click selects the word, so
+ *  the toggle is taken back; the OS bounds a double-click's timing and distance, and a double-click-drag ends on
+ *  another word), 'none' while text is selected (the click ends a drag selection, or clears the one that was there
+ *  at the press), else 'tap'. seq numbers every click; last = { seq } of the last toggle (no seq: a key or a stroke). */
+function tapIntent({ detail, seq, last, selDown, selNow }) {
+  if (detail >= 2 && last && last.seq != null && last.seq === seq - 1) return 'revert';
+  if (selDown || selNow) return 'none';
+  return 'tap';
+}
+/** Ctrl/Cmd+A: by the key, or by keyCode 65, the A key whatever the layout types (ф, α...), which is what the browser's
+ *  own select-all goes by. Not e.code 'KeyA': that is Ctrl+Q on AZERTY. */
+const selectAllKey = (e) => (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'a' || e.key === 'A' || e.keyCode === 65);
+
+NW.app = Object.freeze({ dateNumerals, dateWords, nAuthors, ribbonsOf, teeluHits, meetings, people, nearestWord, lineStep, statusText, wordText, rangeOf, strokePlan, undoPlan, undoFit, pressMove, scrollSpeed, tapIntent, selectAllKey, boot });
 
 // Everything below needs a document; under node the module stops here.
 if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -3110,7 +3124,7 @@ function markWord(i, on) {
   if (!ok && on) wobble();
   return ok;
 }
-function tap(i) {
+function tap(i, seq) {
   if (!P) return;
   const t = P.page.tokens[i];
   if (!t || !t.mk) return;
@@ -3122,12 +3136,34 @@ function tap(i) {
     return;
   }
   const mine = !!(dv.mine && dv.mine.marks.has(i));
-  if (mine) { if (markWord(i, false)) pushUndo(S.date, [[i, true, false]]); }
-  else if (inkLeft() > 0) { if (markWord(i, true)) pushUndo(S.date, [[i, false, true]]); }
+  let group = null;
+  if (mine) { if (markWord(i, false)) group = [[i, true, false]]; }
+  else if (inkLeft() > 0) { if (markWord(i, true)) group = [[i, false, true]]; }
   else wobble();   // no ink: the rail wobbles, nothing else
+  if (group) pushUndo(S.date, group);
+  lastTap = group ? { seq, date: S.date, group } : null;
   render();
   if (S.kbd) announce(wordText(t, P.page.count, dv));
 }
+let lastTap = null;   // the last toggle, so the second click of a double-click (which selects the word) can take it back
+function revertTap() {
+  const lt = lastTap;
+  lastTap = null;
+  if (!lt || lt.date !== S.date || !me || !P) return;
+  const a = undoStack(lt.date);
+  if (!a || a[a.length - 1] !== lt.group) return;   // something else happened since
+  a.pop();
+  for (const [i, on] of undoPlan(lt.group, mineSet())) markWord(i, on);
+  render();
+}
+/** Text of the page is selected (a drag, a double-click, a long-press). */
+function pageSelected() {
+  const s = window.getSelection && window.getSelection();
+  if (!s || s.isCollapsed || !s.rangeCount) return false;
+  try { return s.getRangeAt(0).intersectsNode($('page')); } catch { return false; }
+}
+let selDown = false;   // text was selected when the current press began: that press only clears it (reset after its click)
+let clickSeq = 0;      // numbers every click on the window, so a double-click's second click knows its first
 
 // ---- undo (§7.5): session-local, per date, at most 50 groups; a group is [[idx, prevOn, setOn], ...] in apply order ----
 const undoS = new Map();
@@ -3553,16 +3589,27 @@ function wire() {
     let w = t.closest('.w');
     if (w && !page.contains(w)) w = null;
     let i = w ? +w.getAttribute('data-i') : nearestWord(wordRects(), e.clientX, e.clientY);
+    // the text selects like any text (§7.6): a click that ends or clears a selection is not a tap, and the second click
+    // of a double-click takes back the first one's toggle
+    const seq = clickSeq;
+    const intent = tapIntent({ detail: e.detail, seq, last: lastTap, selDown, selNow: pageSelected() });
+    if (intent === 'revert') return revertTap();
+    if (intent === 'none') return;
     if (i < 0) { if (S.spot) { S.spot = null; render(); } return; }
     S.kbd = false;
     S.kb = i;
-    tap(i);
+    tap(i, seq);
   });
-  page.addEventListener('contextmenu', (e) => e.preventDefault());
+  // every click counts (capture, before the sheet reads it), and selDown lasts for its press's click only (bubble,
+  // after): a later click with no press (assistive tech, el.click()) is judged on the selection alone
+  window.addEventListener('click', () => { clickSeq++; }, true);
+  window.addEventListener('click', () => { selDown = false; });
   // Strokes (§7.5): a pointerdown only records where it began; a plain tap still arrives as a click. The stroke begins
   // once the pointer travels far enough (touch and pen: within 30° of horizontal; vertical-first is the browser's scroll).
+  // A mouse drag is the browser's text selection (§7.6), so only touch and pen stroke, and never over a selection.
   page.addEventListener('pointerdown', (e) => {
     gest = null;
+    if (e.pointerType === 'mouse' || pageSelected()) return;
     if (!e.isPrimary || e.button !== 0 || S.stroke || !strokeOk()) return;
     if (e.target.closest && e.target.closest('.fw')) return;   // function words are inert, as for a click
     if (e.pointerType !== 'mouse' && page.classList.contains('zoomed')) return;   // zoomed in, a sideways drag pans
@@ -3576,10 +3623,13 @@ function wire() {
     if (S.stroke) { if (e.pointerId === S.stroke.id) { if (e.buttons & 1) moveStroke(e.clientX, e.clientY); else cancelStroke(); } return; }
     if (gest && e.pointerId === gest.id) {
       const m = pressMove(gest.type, e.clientX - gest.x0, e.clientY - gest.y0, e.buttons);
-      if (m === 'begin') return beginStroke(e);
+      // a long-press selected text during this press (pointerdown saw none): a slide after it is the browser's, never a stroke
+      if (m === 'begin') { if (pageSelected()) { gest = null; return; } return beginStroke(e); }
       if (m === 'drop') gest = null;
     }
     if (e.pointerType !== 'mouse') return;
+    // drag-selecting text, or text selected (a click would only clear it): no mark preview under the cursor
+    if ((e.buttons & 1) || pageSelected()) return setHover(-1);
     const w = e.target.closest && e.target.closest('.w');
     setHover(w ? +w.getAttribute('data-i') : -1);
   });
@@ -3592,8 +3642,9 @@ function wire() {
   });
   // anywhere on the window: a press disarms the swallow (no click follows a moved touch, so it would eat the next tap);
   // a release ends a pending press that #page never saw go up, and a cancelled stroke's release arms the swallow
-  window.addEventListener('pointerdown', () => { swallowAt = 0; deadId = null; }, true);
+  window.addEventListener('pointerdown', () => { swallowAt = 0; deadId = null; selDown = pageSelected(); }, true);
   const lift = (e) => {
+    if (e.type === 'pointercancel') selDown = false;   // a cancelled press gets no click to reset it
     if (gest && e.pointerId === gest.id) gest = null;
     if (deadId !== null && e.pointerId === deadId) { deadId = null; if (e.type === 'pointerup') swallowAt = Date.now(); }
   };
@@ -3605,7 +3656,19 @@ function wire() {
   // once a stroke has begun the page holds the touch: a later vertical turn (wrapping to the next line) does not scroll
   page.addEventListener('touchmove', (e) => { if (S.stroke && e.cancelable) e.preventDefault(); }, { passive: false });
   page.addEventListener('pointerleave', () => setHover(-1));
+  // a selection made without moving (a double-click, Ctrl+A) drops the hover preview too
+  document.addEventListener('selectionchange', () => { if (S.hover >= 0 && pageSelected()) setHover(-1); });
   page.addEventListener('keydown', (e) => {
+    // select all, from the page: just its text, not the bar and the dock around it (on any keyboard layout)
+    if (selectAllKey(e)) {
+      e.preventDefault();
+      const r = document.createRange();
+      r.selectNodeContents(page);
+      const s = window.getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+      return;
+    }
     if (e.altKey || e.ctrlKey || e.metaKey || !P) return;
     let i = S.kb;
     switch (e.key) {
